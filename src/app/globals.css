@@ -24,3 +24,427 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Tiptap Overrides for Classic Document Feel */
+.tiptap p.is-editor-empty:first-child::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Global Form Input Text Color Override */
+/* Global Form Input Text Color Override */
+input:not(.text-editor-input),
+textarea:not(.text-editor-input),
+select:not(.text-editor-input) {
+  color: #111827 !important;
+  /* gray-900 */
+}
+
+/* HTML Editor Overlay Fix */
+textarea.text-editor-input {
+  color: transparent !important;
+  caret-color: #aeafad;
+}
+
+/* Reduce Typography plugin spacing for a more standard editor feel */
+.prose {
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.prose p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+
+.prose li {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+/* ========================================= */
+/*           ADVANCED TABLE STYLES           */
+/* ========================================= */
+.tiptap table {
+  border-collapse: collapse;
+  margin: 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.tiptap table td,
+.tiptap table th {
+  border: 1px solid #d1d5db;
+  box-sizing: border-box;
+  min-width: 1em;
+  padding: 8px 10px;
+  position: relative;
+  vertical-align: top;
+  color: #1f2937;
+  /* Gray-800: Fix for invisible text */
+  background-clip: padding-box;
+}
+
+.tiptap table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  text-align: left;
+  color: #111827;
+  /* Gray-900 for headers */
+}
+
+/* Hover effect for cells to show interactivity */
+.tiptap table td:hover,
+.tiptap table th:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Visual selection for cells */
+.tiptap table .selectedCell {
+  border: 2px solid #3b82f6 !important;
+  /* Blue border */
+  position: relative;
+  z-index: 2;
+}
+
+/* Default selected background only if no custom background */
+.tiptap table .selectedCell:not([style*="background-color"]) {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+/* Column Resize Handle */
+.tiptap .column-resize-handle {
+  background-color: #3b82f6;
+  /* Bright blue for visibility */
+  bottom: 0;
+  /* Extend full height */
+  position: absolute;
+  right: -2px;
+  /* Center over border */
+  pointer-events: none;
+  /* Let clicks pass through to Tiptap's listener */
+  top: 0;
+  width: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 20;
+}
+
+/* Show handle when hovering over the table cell */
+.tiptap table th:hover>.column-resize-handle,
+.tiptap table td:hover>.column-resize-handle {
+  opacity: 1;
+}
+
+.resize-cursor {
+  cursor: col-resize;
+}
+
+/* ========================================= */
+/*           TASK LIST STYLES                */
+/* ========================================= */
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.4rem;
+}
+
+.tiptap ul[data-type="taskList"] li>label {
+  flex: 0 0 auto;
+  margin-right: 0.6rem;
+  user-select: none;
+  margin-top: 0.2rem;
+}
+
+/* Image Focus */
+.tiptap img.ProseMirror-selectednode {
+  outline: 3px solid #3b82f6;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Image and Caption - No margin for seamless connection */
+.tiptap figure {
+  margin: 0;
+}
+
+.tiptap figure img {
+  margin: 0;
+  display: block;
+}
+
+.tiptap figure figcaption {
+  margin: 0;
+  margin-top: 0;
+}
+
+.tiptap .group.relative {
+  margin: 0;
+}
+
+/* Math Component Styles */
+.math-node {
+  display: inline-block;
+  padding: 0 0.25rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.math-node:hover {
+  background-color: #f1f5f9;
+}
+
+.math-node.ProseMirror-selectednode {
+  background-color: #e2e8f0;
+  outline: 2px solid #3b82f6;
+}
+
+/* ========================================= */
+/*        HORIZONTAL RULE STYLES             */
+/* ========================================= */
+.tiptap hr {
+  margin: 2rem 0;
+  border: 0;
+  height: auto;
+  background: transparent;
+}
+
+/* 1. Solid (Standard) */
+.tiptap hr[data-line-style="solid"] {
+  border-top: 2px solid #e5e7eb;
+}
+
+/* 2. Dashed */
+.tiptap hr[data-line-style="dashed"] {
+  border-top: 2px dashed #9ca3af;
+}
+
+/* 3. Dotted */
+.tiptap hr[data-line-style="dotted"] {
+  border-top: 3px dotted #9ca3af;
+}
+
+/* 4. Double */
+.tiptap hr[data-line-style="double"] {
+  border-top: 4px double #9ca3af;
+}
+
+/* 5. Thick */
+.tiptap hr[data-line-style="thick"] {
+  border-top: 5px solid #e5e7eb;
+  border-radius: 2px;
+}
+
+/* 6. Gradient */
+.tiptap hr[data-line-style="gradient"] {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(to right,
+      rgba(0, 0, 0, 0),
+      rgba(59, 130, 246, 0.5),
+      rgba(0, 0, 0, 0));
+}
+
+/* ========================================= */
+/*           CODE BLOCK STYLING              */
+/* ========================================= */
+
+/* 1. Reset standard Pre/Code from Prose to allow custom styling */
+.prose pre {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  color: inherit;
+  font-family: inherit;
+}
+
+/* 2. Professional Inline Code Styling */
+.prose :not(pre)>code {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Menlo', 'Consolas',
+    'Liberation Mono', 'Courier New', monospace;
+  background-color: #f1f5f9;
+  background-image: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.8),
+      rgba(241, 245, 249, 0.9));
+  color: #0f172a;
+  padding: 0.2em 0.45em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 1px 2px rgba(0, 0, 0, 0.05);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  display: inline-block;
+  vertical-align: baseline;
+  position: relative;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* ========================================= */
+/*           ALERT BLOCK STYLING             */
+/* ========================================= */
+.alert-block {
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Info (Default) */
+.alert-block[data-alert-type="info"] {
+  background-color: #eff6ff;
+  /* blue-50 */
+  border-color: #3b82f6;
+  /* blue-500 */
+  color: #1e40af;
+  /* blue-800 */
+}
+
+/* Success */
+.alert-block[data-alert-type="success"] {
+  background-color: #f0fdf4;
+  /* green-50 */
+  border-color: #22c55e;
+  /* green-500 */
+  color: #166534;
+  /* green-800 */
+}
+
+/* Warning */
+.alert-block[data-alert-type="warning"] {
+  background-color: #fffbeb;
+  /* amber-50 */
+  border-color: #f59e0b;
+  /* amber-500 */
+  color: #92400e;
+  /* amber-800 */
+}
+
+/* Danger */
+.alert-block[data-alert-type="danger"] {
+  background-color: #fef2f2;
+  /* red-50 */
+  border-color: #ef4444;
+  /* red-500 */
+  color: #991b1b;
+  /* red-800 */
+}
+
+.alert-block p {
+  margin: 0;
+}
+
+/* ========================================= */
+/*        DETAILS (LAYERS) STYLING           */
+/* ========================================= */
+details {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  margin: 1rem 0;
+  background-color: #fff;
+  transition: all 0.2s;
+}
+
+details:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+details[open] {
+  background-color: #f9fafb;
+}
+
+summary {
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem;
+  user-select: none;
+  outline: none;
+  list-style: none;
+  /* Hide default triangle in some browsers */
+  display: flex;
+  align-items: center;
+  color: #374151;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::before {
+  content: '▶';
+  font-size: 0.8em;
+  margin-right: 0.5rem;
+  transition: transform 0.2s;
+  display: inline-block;
+  color: #9ca3af;
+}
+
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+details[open] summary {
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0.5rem;
+}
+
+/* Inner content padding */
+details>div {
+  padding: 0.5rem;
+  color: #4b5563;
+}
+
+
+/* ========================================= */
+/*           FORM INPUT STYLES               */
+/* ========================================= */
+
+/* Hide number input spin buttons */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  appearance: none !important;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield !important;
+  appearance: none !important;
+}
+
+/* Form Input Defaults (Global Override if needed) */
+input,
+select,
+textarea {
+  font-size: 0.95rem;
+  /* Slightly larger text for better readability */
+}
