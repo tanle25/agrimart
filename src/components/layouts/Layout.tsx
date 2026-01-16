@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -28,12 +28,23 @@ import { GlobalSettings, defaultSettings } from '@/lib/settings';
 
 export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: GlobalSettings }> = ({ children, settings = defaultSettings }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { cartCount } = useCart();
   const pathname = usePathname();
+
+  // Handle closing menu with animation
+  const handleCloseMenu = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsMobileMenuOpen(false);
+      setIsClosing(false);
+    }, 400);
+  }, []);
 
   // Focus input when search opens
   useEffect(() => {
@@ -145,9 +156,9 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
               </Link>
               <button
                 className="md:hidden p-2 text-gray-600"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => setIsMobileMenuOpen(true)}
               >
-                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                <Menu className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -178,25 +189,140 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
           </div>
         )}
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Drawer */}
+        {/* Mobile Menu Drawer */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100">
-            <div className="px-4 pt-2 pb-4 space-y-1">
-              <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-gray-50">Trang chủ</Link>
-              <Link href="/san-pham" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-gray-50">Sản phẩm</Link>
-              <div className="px-3 py-2">
-                <div className="font-medium text-gray-900 mb-2">Danh mục</div>
-                <div className="pl-4 space-y-2 border-l-2 border-emerald-100">
-                  {navCategories.map((cat, idx) => (
-                    <Link key={idx} href={cat.path} className="block text-sm text-gray-600 hover:text-emerald-600">{cat.name}</Link>
-                  ))}
+          <>
+            <style dangerouslySetInnerHTML={{
+              __html: `
+              @keyframes slide-in-right-drawer {
+                0% { transform: translateX(100%); }
+                100% { transform: translateX(0); }
+              }
+              @keyframes slide-out-right-drawer {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(100%); }
+              }
+              @keyframes fade-in-backdrop {
+                0% { opacity: 0; }
+                100% { opacity: 1; }
+              }
+              @keyframes fade-out-backdrop {
+                0% { opacity: 1; }
+                100% { opacity: 0; }
+              }
+            `}} />
+            <div className="fixed inset-0 z-50 md:hidden flex justify-end">
+              {/* Backdrop */}
+              <div
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                style={{
+                  animation: isClosing
+                    ? 'fade-out-backdrop 0.4s ease-in forwards'
+                    : 'fade-in-backdrop 0.3s ease-out forwards'
+                }}
+                onClick={handleCloseMenu}
+              />
+
+              {/* Drawer Content */}
+              <div
+                className="bg-white w-[85%] max-w-sm h-full shadow-2xl relative flex flex-col"
+                style={{
+                  animation: isClosing
+                    ? 'slide-out-right-drawer 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    : 'slide-in-right-drawer 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                }}
+              >
+                {/* Drawer Header */}
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-emerald-900 text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-white/20 p-1 rounded-lg">
+                      <Leaf className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="font-bold text-lg">Menu</span>
+                  </div>
+                  <button onClick={handleCloseMenu} className="p-1 rounded-full hover:bg-white/20 transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Drawer Links */}
+                <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                  <Link
+                    href="/"
+                    className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                    onClick={handleCloseMenu}
+                  >
+                    Trang chủ
+                  </Link>
+                  <Link
+                    href="/san-pham"
+                    className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                    onClick={handleCloseMenu}
+                  >
+                    Sản phẩm
+                  </Link>
+
+                  {/* Categories Accordion */}
+                  <div className="px-1">
+                    <button
+                      onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+                      className="w-full flex items-center justify-between px-3 py-3 text-gray-700 font-medium hover:bg-gray-50 rounded-xl transition-colors"
+                    >
+                      <span>Danh mục</span>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <div className={`space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${isCategoriesOpen ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                      {navCategories.map((cat, idx) => (
+                        <Link
+                          key={idx}
+                          href={cat.path}
+                          className="block pl-9 pr-4 py-2.5 text-sm text-gray-600 hover:text-emerald-600 border-l-2 border-transparent hover:border-emerald-500 transition-colors"
+                          onClick={handleCloseMenu}
+                        >
+                          {cat.name}
+                        </Link>
+                      ))}
+                      <Link
+                        href="/san-pham"
+                        className="block pl-9 pr-4 py-2.5 text-xs font-bold text-emerald-600 uppercase tracking-wider"
+                        onClick={handleCloseMenu}
+                      >
+                        Xem tất cả
+                      </Link>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/tin-tuc"
+                    className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                    onClick={handleCloseMenu}
+                  >
+                    Bài viết
+                  </Link>
+                  <Link
+                    href="/gioi-thieu"
+                    className="block px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                    onClick={handleCloseMenu}
+                  >
+                    Giới thiệu
+                  </Link>
+                </div>
+
+                {/* Drawer Footer */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50">
+                  <Link
+                    href="/admin/dashboard"
+                    className="flex items-center justify-center gap-2 w-full bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all shadow-sm"
+                    onClick={handleCloseMenu}
+                  >
+                    <User className="w-4 h-4" /> Truy cập Admin
+                  </Link>
                 </div>
               </div>
-              <Link href="/tin-tuc" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-gray-50">Bài viết</Link>
-              <Link href="/gioi-thieu" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-gray-50">Giới thiệu</Link>
-              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-emerald-600 bg-emerald-50 mt-2">Truy cập Admin</Link>
             </div>
-          </div>
+          </>
         )}
       </header>
 
@@ -204,10 +330,10 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
         {children}
       </main>
 
-      <footer className="bg-emerald-900 text-emerald-100 py-12">
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
+      <footer className="bg-emerald-900 text-emerald-100 py-8">
+        <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-3">
               <div className="bg-white p-1 rounded">
                 {settings.general.logo ? (
                   <img src={settings.general.logo} alt="AgriMart" className="h-6 w-auto" />
@@ -217,36 +343,36 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                   </div>
                 )}
               </div>
-              <span className="text-xl font-bold text-white">{settings.general.siteTitle}</span>
+              <span className="text-lg font-bold text-white">{settings.general.siteTitle}</span>
             </div>
-            <p className="text-emerald-200/80 text-sm">
+            <p className="text-emerald-200/80 text-xs leading-relaxed max-w-xs">
               {settings.general.tagline}
             </p>
           </div>
           <div>
-            <h3 className="text-white font-semibold mb-4">Liên kết</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Liên kết</h3>
+            <ul className="space-y-1.5 text-xs">
               <li><Link href="/policy" className="hover:text-white transition-colors">Chính sách bảo mật</Link></li>
               <li><Link href="/policy" className="hover:text-white transition-colors">Điều khoản dịch vụ</Link></li>
               <li><Link href="/policy" className="hover:text-white transition-colors">Chính sách vận chuyển</Link></li>
             </ul>
           </div>
           <div>
-            <h3 className="text-white font-semibold mb-4">Danh mục</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/san-pham" className="hover:text-white transition-colors">Rau củ</Link></li>
-              <li><Link href="/san-pham" className="hover:text-white transition-colors">Trái cây</Link></li>
+            <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Danh mục</h3>
+            <ul className="space-y-1.5 text-xs">
+              <li><Link href="/san-pham" className="hover:text-white transition-colors">Rau củ hữu cơ</Link></li>
+              <li><Link href="/san-pham" className="hover:text-white transition-colors">Trái cây tươi</Link></li>
               <li><Link href="/san-pham" className="hover:text-white transition-colors">Thực phẩm khô</Link></li>
             </ul>
           </div>
-          <div>
-            <h3 className="text-white font-semibold mb-4">Liên hệ</h3>
-            <p className="text-sm text-emerald-200/80 mb-2">{settings.store.phone}</p>
-            <p className="text-sm text-emerald-200/80 mb-2">{settings.store.email}</p>
-            <p className="text-sm text-emerald-200/80">{settings.store.address}</p>
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Liên hệ</h3>
+            <p className="text-xs text-emerald-200/80 mb-1">Hotline: {settings.store.phone}</p>
+            <p className="text-xs text-emerald-200/80 mb-1">Email: {settings.store.email}</p>
+            <p className="text-xs text-emerald-200/80">Đ/c: {settings.store.address}</p>
           </div>
         </div>
-        <div className="container mx-auto px-4 mt-8 pt-8 border-t border-emerald-800 text-center text-xs text-emerald-400">
+        <div className="container mx-auto px-4 mt-6 pt-6 border-t border-emerald-800 text-center text-[10px] text-emerald-400">
           © {new Date().getFullYear()} {settings.general.siteTitle}. All rights reserved.
         </div>
       </footer>

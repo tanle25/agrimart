@@ -16,7 +16,8 @@ import {
     ChevronRight,
     ChevronLeft,
     Package,
-    Loader2
+    Loader2,
+    X
 } from 'lucide-react';
 import { getImageUrl } from '@/shared/utils';
 import { useCart } from '@/contexts/CartContext';
@@ -35,7 +36,42 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     const [error, setError] = useState(false);
     const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
     const { addToCart } = useCart();
+
     const { success, error: toastError } = useToast();
+
+    // Animation States
+    const [shouldRender, setShouldRender] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [drawerMode, setDrawerMode] = useState<'cart' | 'buy'>('cart');
+
+    const openDrawer = (mode: 'cart' | 'buy') => {
+        setDrawerMode(mode);
+        setShouldRender(true);
+        // Small delay to allow mount before transition
+        setTimeout(() => setIsVisible(true), 10);
+    };
+
+    const closeDrawer = () => {
+        setIsVisible(false);
+        // Wait for transition to finish before unmounting
+        setTimeout(() => setShouldRender(false), 500);
+    };
+
+    const handleDrawerConfirm = () => {
+        if (product.type === 'variable' && !selectedVariant) {
+            toastError("Vui lòng chọn phân loại hàng");
+            return;
+        }
+
+        addToCart(product, quantity, selectedVariant || undefined);
+        closeDrawer();
+        if (drawerMode === 'buy') {
+            // Logic for buy now -> redirect to checkout (mock)
+            success(`Đã thêm vào giỏ hàng và chuyển đến thanh toán (Mock)`);
+        } else {
+            success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
+        }
+    };
 
     const handleAttributeSelect = (attributeName: string, value: string) => {
         if (!product) return;
@@ -168,7 +204,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
     };
 
     return (
-        <div className="bg-white min-h-screen pb-20 font-sans">
+        <div className="bg-white min-h-screen pb-24 md:pb-20 font-sans">
             {/* Breadcrumbs */}
             <div className="bg-gray-50 border-b border-gray-100">
                 <div className="container mx-auto px-4 py-4 text-sm text-gray-500 flex items-center gap-2">
@@ -185,7 +221,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
 
                     {/* LEFT: Image Gallery */}
                     <div className="space-y-6">
-                        <div className="aspect-square rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 relative group">
+                        <div className="aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 relative group">
                             <img
                                 src={activeImage || '/placeholder.png'}
                                 alt={product.name}
@@ -272,8 +308,8 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                             />
                         </div>
 
-                        {/* Selectors & Actions */}
-                        <div className="space-y-8 mb-8">
+                        {/* Selectors & Actions (Desktop) */}
+                        <div className="space-y-8 mb-8 hidden md:block">
                             {/* Variants */}
                             {/* Variants Selection */}
                             {product.type === 'variable' && product.attributes && product.attributes.length > 0 && product.variants && (
@@ -408,22 +444,22 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                 <div className="mt-20">
                     <div className="flex flex-col md:flex-row gap-8 items-start">
                         {/* Tab Headers */}
-                        <div className="w-full md:w-64 flex-shrink-0 flex md:flex-col gap-2 border-b md:border-b-0 md:border-r border-gray-200 pb-4 md:pb-0 md:pr-4">
+                        <div className="w-full md:w-64 flex-shrink-0 flex md:flex-col gap-2 border-b md:border-b-0 md:border-r border-gray-200 pb-4 md:pb-0 md:pr-4 overflow-x-auto snap-x scrollbar-hide">
                             <button
                                 onClick={() => setActiveTab('desc')}
-                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all ${activeTab === 'desc' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all whitespace-nowrap snap-start ${activeTab === 'desc' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
                             >
                                 Mô tả sản phẩm
                             </button>
                             <button
                                 onClick={() => setActiveTab('reviews')}
-                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all ${activeTab === 'reviews' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all whitespace-nowrap snap-start ${activeTab === 'reviews' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
                             >
                                 Đánh giá ({product.reviews || 0})
                             </button>
                             <button
                                 onClick={() => setActiveTab('shipping')}
-                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all ${activeTab === 'shipping' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+                                className={`text-left px-4 py-3 rounded-lg font-bold text-sm transition-all whitespace-nowrap snap-start ${activeTab === 'shipping' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
                             >
                                 Chính sách giao hàng
                             </button>
@@ -486,7 +522,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                                 Xem tất cả <ChevronRight className="w-4 h-4" />
                             </Link>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
                             {relatedProducts.map(p => (
                                 <div key={p.id} className="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                                     <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -558,6 +594,148 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
                     </div>
                 )}
             </div>
+            {/* Mobile Sticky Action Bar */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 md:hidden z-40 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] safe-area-bottom">
+                <button
+                    onClick={() => openDrawer('cart')}
+                    className="flex-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-base py-3 shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                    <ShoppingCart className="w-5 h-5" />
+                    Thêm vào giỏ
+                </button>
+                <button
+                    onClick={() => openDrawer('buy')}
+                    className="flex-1 bg-emerald-600 text-white rounded-xl font-bold text-base py-3 shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                    Mua ngay
+                </button>
+            </div>
+
+            {/* iOS-style Variant Drawer */}
+            {shouldRender && (
+                <>
+                    <div
+                        className={`fixed inset-0 bg-black/60 z-50 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                        onClick={closeDrawer}
+                    />
+                    <div
+                        className={`fixed bottom-0 left-0 right-0 md:max-w-xl md:mx-auto md:bottom-4 md:rounded-3xl bg-white rounded-t-3xl z-50 p-6 max-h-[85vh] overflow-y-auto flex flex-col pb-safe shadow-2xl transition-transform duration-500 ease-out transform ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}
+                    >
+
+                        {/* Drawer Header */}
+                        <div className="flex gap-4 mb-6 sticky top-0 bg-white z-10 pb-4 border-b border-gray-100">
+                            <div className="w-24 h-24 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0 bg-gray-50">
+                                <img
+                                    src={activeImage || '/placeholder.png'}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <div className="flex-1 flex flex-col justify-end pb-1">
+                                <div className="flex items-end gap-2 mb-1">
+                                    <span className="text-2xl font-bold text-emerald-600">{displayPrice.toLocaleString()}đ</span>
+                                    {(displayOldPrice || 0) > 0 && (
+                                        <span className="text-sm text-gray-400 line-through mb-1">{displayOldPrice.toLocaleString()}đ</span>
+                                    )}
+                                </div>
+                                <div className="text-sm text-gray-500">Kho: {selectedVariant ? (selectedVariant.stock || 'Còn hàng') : (product.stock || 'Còn hàng')}</div>
+                            </div>
+                            <button
+                                onClick={closeDrawer}
+                                className="absolute top-0 right-0 p-2 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Drawer Body: Selectors */}
+                        <div className="space-y-6 mb-8 flex-1">
+                            {/* Variants */}
+                            {product.type === 'variable' && product.attributes && product.attributes.length > 0 && product.variants && (
+                                <div className="space-y-5">
+                                    {product.attributes.map((attr: any, idx: number) => (
+                                        <div key={idx}>
+                                            <span className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">{attr.name}:</span>
+                                            <div className="flex flex-wrap gap-3">
+                                                {attr.values.map((value: string) => {
+                                                    const isSelected = selectedAttributes[attr.name] === value;
+                                                    const hasVisual = attr.isVisual && attr.valueImages?.[value];
+
+                                                    return (
+                                                        <button
+                                                            key={value}
+                                                            onClick={() => handleAttributeSelect(attr.name, value)}
+                                                            className={`
+                                                                relative rounded-xl border-2 transition-all duration-200
+                                                                ${hasVisual
+                                                                    ? (isSelected ? 'border-emerald-500 ring-2 ring-emerald-100 p-0.5' : 'border-gray-200 hover:border-emerald-200 p-0.5')
+                                                                    : (isSelected ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold px-4 py-2 text-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-emerald-200 font-medium px-4 py-2 text-sm')
+                                                                }
+                                                            `}
+                                                        >
+                                                            {hasVisual ? (
+                                                                <div className="w-12 h-12 rounded-lg overflow-hidden relative">
+                                                                    <img
+                                                                        src={getImageUrl(attr.valueImages[value])}
+                                                                        alt={value}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                    {isSelected && (
+                                                                        <div className="absolute inset-0 bg-black/10 z-10"></div>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <span>{value}</span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Quantity */}
+                            <div>
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-sm font-bold text-gray-900 uppercase tracking-wide">Số lượng:</span>
+                                </div>
+                                <div className="flex items-center border border-gray-300 rounded-xl w-32">
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        className="p-3 text-gray-500 hover:text-emerald-600 active:bg-gray-100 rounded-l-xl transition-colors"
+                                    >
+                                        <Minus className="w-5 h-5" />
+                                    </button>
+                                    <input
+                                        type="text"
+                                        value={quantity}
+                                        readOnly
+                                        className="w-10 flex-1 bg-transparent text-center text-gray-900 font-bold focus:outline-none"
+                                    />
+                                    <button
+                                        onClick={() => setQuantity(quantity + 1)}
+                                        className="p-3 text-gray-500 hover:text-emerald-600 active:bg-gray-100 rounded-r-xl transition-colors"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Drawer Footer: Action Button */}
+                        <div className="pt-2">
+                            <button
+                                onClick={handleDrawerConfirm}
+                                className="w-full bg-emerald-600 text-white rounded-xl font-bold text-lg py-4 shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                {drawerMode === 'buy' ? 'Mua ngay' : 'Thêm vào giỏ hàng'}
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

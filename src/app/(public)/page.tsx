@@ -132,27 +132,27 @@ export default function Home() {
             </section>
 
             {/* Features Grid */}
-            <section className="container mx-auto px-4 -mt-10 relative z-20">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-2xl">🌿</div>
+            <section className="container mx-auto px-4 -mt-8 relative z-20">
+                <div className="grid grid-cols-3 gap-2 md:gap-6">
+                    <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left h-full justify-center md:justify-start">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-full flex items-center justify-center text-lg md:text-2xl shrink-0">🌿</div>
                         <div>
-                            <h3 className="font-bold text-gray-900">100% Tự nhiên</h3>
-                            <p className="text-sm text-gray-500">Chuẩn VietGAP an toàn</p>
+                            <h3 className="font-bold text-gray-900 text-xs md:text-base leading-tight">100% Tự nhiên</h3>
+                            <p className="text-[10px] md:text-sm text-gray-500 hidden md:block">Chuẩn VietGAP an toàn</p>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-2xl">🚛</div>
+                    <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left h-full justify-center md:justify-start">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center text-lg md:text-2xl shrink-0">🚛</div>
                         <div>
-                            <h3 className="font-bold text-gray-900">Giao hàng 2H</h3>
-                            <p className="text-sm text-gray-500">Nội thành TP.HCM</p>
+                            <h3 className="font-bold text-gray-900 text-xs md:text-base leading-tight">Giao hàng 2H</h3>
+                            <p className="text-[10px] md:text-sm text-gray-500 hidden md:block">Nội thành TP.HCM</p>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-2xl">🛡️</div>
+                    <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left h-full justify-center md:justify-start">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-full flex items-center justify-center text-lg md:text-2xl shrink-0">🛡️</div>
                         <div>
-                            <h3 className="font-bold text-gray-900">Đổi trả 1-1</h3>
-                            <p className="text-sm text-gray-500">Nếu không hài lòng</p>
+                            <h3 className="font-bold text-gray-900 text-xs md:text-base leading-tight">Đổi trả 1-1</h3>
+                            <p className="text-[10px] md:text-sm text-gray-500 hidden md:block">Nếu không hài lòng</p>
                         </div>
                     </div>
                 </div>
@@ -223,7 +223,7 @@ export default function Home() {
                                 </Link>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                                 {products.map((product: any) => (
                                     <div key={product.id} className="h-full">
                                         <ProductCard product={product} />
