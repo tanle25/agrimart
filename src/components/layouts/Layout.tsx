@@ -25,6 +25,7 @@ import {
 import { useCart } from '@/contexts/CartContext';
 
 import { GlobalSettings, defaultSettings } from '@/lib/settings';
+import { AgriImage } from '@/components/ui/AgriImage';
 
 export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: GlobalSettings }> = ({ children, settings = defaultSettings }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -93,7 +94,16 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               {settings.general.logo ? (
-                <img src={settings.general.logo} alt={settings.general.siteTitle} className="h-10 w-auto object-contain rounded-lg" />
+                <div className="h-10 w-10 relative">
+                  <AgriImage
+                    src={settings.general.logo}
+                    alt={settings.general.siteTitle}
+                    className="rounded-lg object-contain"
+                    width={40}
+                    height={40}
+                    priority
+                  />
+                </div>
               ) : (
                 <div className="bg-emerald-600 p-1.5 rounded-lg">
                   <Leaf className="w-6 h-6 text-white" />
@@ -123,26 +133,28 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                     </Link>
                   ))}
                   <div className="border-t border-gray-100 mt-2 pt-2">
-                    <Link href="/san-pham" className="block px-4 py-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider">
+                    <Link href="/san-pham" className="block px-4 py-2 text-xs font-bold text-emerald-700 hover:text-emerald-800 uppercase tracking-wider">
                       Xem tất cả
                     </Link>
                   </div>
                 </div>
               </div>
 
-              <Link href="/tin-tuc" className="text-gray-600 hover:text-emerald-600 font-medium transition-colors">Bài viết</Link>
-              <Link href="/gioi-thieu" className="text-gray-600 hover:text-emerald-600 font-medium transition-colors">Giới thiệu</Link>
+              <Link href="/tin-tuc" className="text-gray-600 hover:text-emerald-700 font-medium transition-colors">Bài viết</Link>
+              <Link href="/gioi-thieu" className="text-gray-600 hover:text-emerald-700 font-medium transition-colors">Giới thiệu</Link>
             </nav>
 
             {/* Actions */}
             <div className="flex items-center gap-4">
               <button
+                type="button"
+                aria-label={isSearchOpen ? "Đóng tìm kiếm" : "Mở tìm kiếm"}
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className={`p-2 transition-colors ${isSearchOpen ? 'text-emerald-600 bg-emerald-50 rounded-full' : 'text-gray-400 hover:text-emerald-600'}`}
+                className={`p-2 transition-colors ${isSearchOpen ? 'text-emerald-700 bg-emerald-50 rounded-full' : 'text-gray-500 hover:text-emerald-700'}`}
               >
                 {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
               </button>
-              <Link href="/gio-hang" className="p-2 text-gray-400 hover:text-emerald-600 transition-colors relative">
+              <Link href="/gio-hang" aria-label="Giỏ hàng" className="p-2 text-gray-500 hover:text-emerald-700 transition-colors relative">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
                   <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-500 rounded-full">
@@ -155,6 +167,8 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                 <span>Admin</span>
               </Link>
               <button
+                type="button"
+                aria-label="Menu"
                 className="md:hidden p-2 text-gray-600"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
@@ -278,7 +292,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                         <Link
                           key={idx}
                           href={cat.path}
-                          className="block pl-9 pr-4 py-2.5 text-sm text-gray-600 hover:text-emerald-600 border-l-2 border-transparent hover:border-emerald-500 transition-colors"
+                          className="block pl-9 pr-4 py-2.5 text-sm text-gray-600 hover:text-emerald-700 border-l-2 border-transparent hover:border-emerald-500 transition-colors"
                           onClick={handleCloseMenu}
                         >
                           {cat.name}
@@ -286,7 +300,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                       ))}
                       <Link
                         href="/san-pham"
-                        className="block pl-9 pr-4 py-2.5 text-xs font-bold text-emerald-600 uppercase tracking-wider"
+                        className="block pl-9 pr-4 py-2.5 text-xs font-bold text-emerald-700 uppercase tracking-wider"
                         onClick={handleCloseMenu}
                       >
                         Xem tất cả
@@ -338,7 +352,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                 {settings.general.logo ? (
                   <img src={settings.general.logo} alt="AgriMart" className="h-6 w-auto" />
                 ) : (
-                  <div className="bg-emerald-600 p-1.5 rounded-lg">
+                  <div className="bg-emerald-700 p-1.5 rounded-lg">
                     <Leaf className="w-5 h-5 text-white" />
                   </div>
                 )}
@@ -351,18 +365,18 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
           </div>
           <div>
             <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Liên kết</h3>
-            <ul className="space-y-1.5 text-xs">
-              <li><Link href="/policy" className="hover:text-white transition-colors">Chính sách bảo mật</Link></li>
-              <li><Link href="/policy" className="hover:text-white transition-colors">Điều khoản dịch vụ</Link></li>
-              <li><Link href="/policy" className="hover:text-white transition-colors">Chính sách vận chuyển</Link></li>
+            <ul className="space-y-1 text-xs">
+              <li><Link href="/chinh-sach-bao-mat" className="block py-2 hover:text-white transition-colors">Chính sách bảo mật</Link></li>
+              <li><Link href="/dieu-khoan-dich-vu" className="block py-2 hover:text-white transition-colors">Điều khoản dịch vụ</Link></li>
+              <li><Link href="/chinh-sach-van-chuyen" className="block py-2 hover:text-white transition-colors">Chính sách vận chuyển</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Danh mục</h3>
-            <ul className="space-y-1.5 text-xs">
-              <li><Link href="/san-pham" className="hover:text-white transition-colors">Rau củ hữu cơ</Link></li>
-              <li><Link href="/san-pham" className="hover:text-white transition-colors">Trái cây tươi</Link></li>
-              <li><Link href="/san-pham" className="hover:text-white transition-colors">Thực phẩm khô</Link></li>
+            <ul className="space-y-1 text-xs">
+              <li><Link href="/san-pham" className="block py-2 hover:text-white transition-colors">Rau củ hữu cơ</Link></li>
+              <li><Link href="/san-pham" className="block py-2 hover:text-white transition-colors">Trái cây tươi</Link></li>
+              <li><Link href="/san-pham" className="block py-2 hover:text-white transition-colors">Thực phẩm khô</Link></li>
             </ul>
           </div>
           <div className="col-span-2 md:col-span-1">

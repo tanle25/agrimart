@@ -1,8 +1,11 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import { Product } from '@/shared/types';
 import { formatCurrency, getImageUrl } from '@/shared/utils';
 import { ShoppingCart, Star, Heart } from 'lucide-react';
+import { AgriImage } from '@/components/ui/AgriImage';
 
 interface ProductCardProps {
     product: Product;
@@ -84,10 +87,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             {/* Image Section */}
             <div className="relative aspect-square overflow-hidden bg-gray-50 shrink-0">
                 <Link href={`/san-pham/${product.slug || product.id}`}>
-                    <img
+                    <AgriImage
                         src={imageUrl || '/placeholder.png'}
                         alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        aspectRatio="1/1"
+                        className="transition-transform duration-500 group-hover:scale-105"
                     />
                 </Link>
 
@@ -101,7 +105,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 )}
 
                 {/* Wishlist Button */}
-                <button className="absolute top-3 right-3 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-500 hover:text-rose-500 hover:bg-white transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 duration-300 shadow-sm cursor-pointer">
+                <button
+                    aria-label={`Thêm ${product.name} vào danh sách yêu thích`}
+                    className="absolute top-3 right-3 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-500 hover:text-rose-500 hover:bg-white transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 duration-300 shadow-sm cursor-pointer"
+                >
                     <Heart size={18} />
                 </button>
             </div>
@@ -125,11 +132,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
                 {/* Price Block */}
                 <div className="flex items-baseline gap-2 mb-4 mt-auto">
-                    <span className="text-lg font-bold text-emerald-600">
+                    <span className="text-lg font-bold text-emerald-700">
                         {priceDisplay}
                     </span>
                     {oldPriceDisplay && (
-                        <span className="text-sm text-gray-400 line-through">
+                        <span className="text-sm text-gray-500 line-through">
                             {oldPriceDisplay}
                         </span>
                     )}

@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
-import prisma from '@/services/db.js';
+
+import prisma from '../../services/db.js';
 
 const productRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get('/categories', async (request, reply) => {

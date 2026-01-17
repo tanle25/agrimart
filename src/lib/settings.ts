@@ -26,6 +26,13 @@ export interface GlobalSettings {
         freeShipEnabled: boolean;
         freeShipThreshold: number;
     };
+    appearance?: {
+        hero?: {
+            mode: string;
+            items: any[];
+        };
+        [key: string]: any;
+    };
 }
 
 export const defaultSettings: GlobalSettings = {
@@ -59,7 +66,7 @@ export const defaultSettings: GlobalSettings = {
 
 export async function getGlobalSettings(): Promise<GlobalSettings> {
     try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
         const res = await fetch(`${backendUrl}/api/settings`, {
             next: { revalidate: 60 } // Revalidate every 60 seconds
         });

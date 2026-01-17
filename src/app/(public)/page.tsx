@@ -1,135 +1,132 @@
-"use client";
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ArrowRight, Star, ShoppingCart, Calendar, Clock, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getImageUrl } from '@/shared/utils';
 import ProductCard from '@/components/products/ProductCard';
+import { AgriImage } from '@/components/ui/AgriImage';
+import OptimizedHero from '@/components/home/OptimizedHero';
+import { getGlobalSettings } from '@/lib/settings';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+// Server actions/fetchers
+async function getCategories() {
+    try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+        const res = await fetch(`${backendUrl}/api/products/categories`, { next: { revalidate: 300 } });
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (e) {
+        console.error('Failed to fetch categories', e);
+        return [];
+    }
+}
 
-export default function Home() {
-    const [blogPosts, setBlogPosts] = useState<any[]>([]);
-    const [homeCategories, setHomeCategories] = useState<any[]>([]);
-    const [categoryProducts, setCategoryProducts] = useState<Record<string, any[]>>({});
+async function getProductsByCategory(category: string, limit: number = 4) {
+    try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+        const res = await fetch(`${backendUrl}/api/products?limit=${limit}&category=${encodeURIComponent(category)}`, { next: { revalidate: 60 } });
+        if (!res.ok) return { products: [] };
+        return await res.json();
+    } catch (e) {
+        console.error(`Failed to fetch products for ${category}`, e);
+        return { products: [] };
+    }
+}
 
-    // Dynamic Hero Settings
-    const [hero, setHero] = useState({
+async function getBlogPosts(limit: number = 3) {
+    try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+        const res = await fetch(`${backendUrl}/api/blog?limit=${limit}`, { next: { revalidate: 3600 } });
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (e) {
+        console.error('Failed to fetch blog posts', e);
+        return [];
+    }
+}
+
+export default async function Home() {
+    // Parallel fetching for performance
+    const settingsPromise = getGlobalSettings();
+    const categoriesPromise = getCategories();
+    const blogPostsPromise = getBlogPosts();
+
+    const [settings, categoriesData, blogPosts] = await Promise.all([
+        settingsPromise,
+        categoriesPromise,
+        blogPostsPromise
+    ]);
+
+    // Process Hero Settings
+    let hero = {
         title: "Mang hương vị thiên nhiên \n về ngôi nhà bạn",
         subtitle: "Chúng tôi kết nối trực tiếp với các nông trại đạt chuẩn VietGAP để mang đến những sản phẩm tươi ngon nhất mỗi ngày.",
         image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=2938&auto=format&fit=crop",
         buttonText: "Mua ngay",
         buttonLink: "/san-pham",
         showButton: true
-    });
+    };
 
-    useEffect(() => {
-        async function loadData() {
-            // Fetch Settings for Hero
-            try {
-                const settingsRes = await fetch(`${BACKEND_URL}/api/settings`);
-                if (settingsRes.ok) {
-                    const data = await settingsRes.json();
-                    if (data.appearance?.hero) {
-                        const settings = data.appearance.hero;
-                        let availableItems: any[] = [];
-                        if (Array.isArray(settings.items)) {
-                            availableItems = settings.items.filter((i: any) => i.active);
-                        }
-
-                        if (availableItems.length > 0) {
-                            if (settings.mode === 'random') {
-                                const randomIndex = Math.floor(Math.random() * availableItems.length);
-                                setHero(prev => ({ ...prev, ...availableItems[randomIndex] }));
-                            } else {
-                                setHero(prev => ({ ...prev, ...availableItems[0] }));
-                            }
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch settings", err);
-            }
-
-            // Fetch latest 3 blog posts
-            fetch(`${BACKEND_URL}/api/blog?limit=3`)
-                .then(res => res.json())
-                .then(data => setBlogPosts(Array.isArray(data) ? data : []))
-                .catch(err => console.error("Failed to fetch blog posts", err));
-
-            // Fetch Categories
-            try {
-                const catRes = await fetch(`${BACKEND_URL}/api/products/categories`);
-                const catData = await catRes.json();
-
-                if (Array.isArray(catData)) {
-                    // Take top 4 categories with products
-                    const topCategories = catData
-                        .filter((c: any) => c.count > 0)
-                        .slice(0, 4)
-                        .map((c: any) => ({
-                            title: c.name,
-                            filter: c.name,
-                            link: `/san-pham?category=${encodeURIComponent(c.name)}`
-                        }));
-
-                    setHomeCategories(topCategories);
-
-                    // Fetch products for each category
-                    const productPromises = topCategories.map((cat: any) =>
-                        fetch(`${BACKEND_URL}/api/products?limit=4&category=${encodeURIComponent(cat.filter)}`)
-                            .then(r => r.json())
-                            .then(d => ({ category: cat.filter, products: d.products || [] }))
-                    );
-
-                    const results = await Promise.all(productPromises);
-                    const newCategoryProducts: Record<string, any[]> = {};
-                    results.forEach((res: any) => {
-                        newCategoryProducts[res.category] = res.products;
-                    });
-                    setCategoryProducts(newCategoryProducts);
-                }
-            } catch (err) {
-                console.error("Failed to fetch categories/products", err);
-            }
+    if (settings.appearance?.hero) {
+        const heroSettings = settings.appearance.hero;
+        let availableItems: any[] = [];
+        if (Array.isArray(heroSettings.items)) {
+            availableItems = heroSettings.items.filter((i: any) => i.active);
         }
 
-        loadData();
-    }, []);
+        if (availableItems.length > 0) {
+            // Server-side random might mismatch with client hydration if we aren't careful, 
+            // but for a Server Component it's fine as it sends HTML.
+            // However, to keep it consistent cache-wise, we might want to pick the first one 
+            // OR accept that random is determined at render time.
+            if (heroSettings.mode === 'random') {
+                const randomIndex = Math.floor(Math.random() * availableItems.length);
+                hero = { ...hero, ...availableItems[randomIndex] };
+            } else {
+                hero = { ...hero, ...availableItems[0] };
+            }
+        }
+    }
+
+    // Process Categories (Top 4)
+    let homeCategories: any[] = [];
+    let categoryProducts: Record<string, any[]> = {};
+
+    if (Array.isArray(categoriesData)) {
+        homeCategories = categoriesData
+            .filter((c: any) => c.count > 0)
+            .slice(0, 4)
+            .map((c: any) => ({
+                title: c.name,
+                filter: c.name,
+                link: `/san-pham?category=${encodeURIComponent(c.name)}`
+            }));
+
+        // Fetch products for these categories in parallel
+        const productsPromises = homeCategories.map(cat =>
+            getProductsByCategory(cat.filter).then(data => ({ category: cat.filter, products: data.products }))
+        );
+
+        try {
+            const results = await Promise.all(productsPromises);
+            results.forEach(res => {
+                categoryProducts[res.category] = res.products || [];
+            });
+        } catch (e) {
+            console.error('Failed to fetch category products', e);
+        }
+    }
 
     return (
         <div className="space-y-16 pb-16">
-            {/* Hero Section */}
-            <section className="relative bg-emerald-900 overflow-hidden">
-                <div
-                    className="absolute inset-0 opacity-20 bg-cover bg-center transition-all duration-1000"
-                    style={{ backgroundImage: `url('${hero.image}')` }}
-                ></div>
-                <div className="container mx-auto px-4 py-24 md:py-32 relative z-10">
-                    <div className="max-w-2xl text-white">
-                        <span className="bg-emerald-500/20 text-emerald-100 text-sm font-semibold px-3 py-1 rounded-full mb-4 inline-block backdrop-blur-sm border border-emerald-500/30">
-                            Nông sản sạch 100% Organic
-                        </span>
-                        <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight whitespace-pre-line">
-                            {hero.title}
-                        </h1>
-                        <p className="text-xl text-emerald-100 mb-8 max-w-lg">
-                            {hero.subtitle}
-                        </p>
-                        <div className="flex gap-4">
-                            {hero.showButton && (
-                                <Link href={hero.buttonLink || '/san-pham'} className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-lg font-bold transition-all transform hover:translate-y-[-2px] shadow-lg shadow-emerald-900/20">
-                                    {hero.buttonText}
-                                    <ArrowRight className="w-5 h-5" />
-                                </Link>
-                            )}
-                            <Link href="/gioi-thieu" className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg font-bold transition-all backdrop-blur-sm">
-                                Tìm hiểu thêm
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            {/* Optimized Hero Section */}
+            <OptimizedHero
+                title={hero.title}
+                subtitle={hero.subtitle}
+                image={hero.image}
+                buttonText={hero.buttonText}
+                buttonLink={hero.buttonLink}
+                showButton={hero.showButton}
+            />
 
             {/* Features Grid */}
             <section className="container mx-auto px-4 -mt-8 relative z-20">
@@ -137,21 +134,21 @@ export default function Home() {
                     <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left h-full justify-center md:justify-start">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-100 rounded-full flex items-center justify-center text-lg md:text-2xl shrink-0">🌿</div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-xs md:text-base leading-tight">100% Tự nhiên</h3>
+                            <h2 className="font-bold text-gray-900 text-xs md:text-base leading-tight">100% Tự nhiên</h2>
                             <p className="text-[10px] md:text-sm text-gray-500 hidden md:block">Chuẩn VietGAP an toàn</p>
                         </div>
                     </div>
                     <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left h-full justify-center md:justify-start">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center text-lg md:text-2xl shrink-0">🚛</div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-xs md:text-base leading-tight">Giao hàng 2H</h3>
+                            <h2 className="font-bold text-gray-900 text-xs md:text-base leading-tight">Giao hàng 2H</h2>
                             <p className="text-[10px] md:text-sm text-gray-500 hidden md:block">Nội thành TP.HCM</p>
                         </div>
                     </div>
                     <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col md:flex-row items-center gap-2 md:gap-4 text-center md:text-left h-full justify-center md:justify-start">
                         <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-full flex items-center justify-center text-lg md:text-2xl shrink-0">🛡️</div>
                         <div>
-                            <h3 className="font-bold text-gray-900 text-xs md:text-base leading-tight">Đổi trả 1-1</h3>
+                            <h2 className="font-bold text-gray-900 text-xs md:text-base leading-tight">Đổi trả 1-1</h2>
                             <p className="text-[10px] md:text-sm text-gray-500 hidden md:block">Nếu không hài lòng</p>
                         </div>
                     </div>
@@ -166,17 +163,22 @@ export default function Home() {
                             <h2 className="text-3xl font-bold text-gray-900 mb-2">Tin tức & Mẹo vặt</h2>
                             <p className="text-gray-500">Kiến thức nông nghiệp và sức khỏe cho gia đình bạn</p>
                         </div>
-                        <Link href="/tin-tuc" className="hidden md:flex items-center text-emerald-600 font-semibold hover:text-emerald-700">
+                        <Link href="/tin-tuc" className="hidden md:flex items-center text-emerald-700 font-semibold hover:text-emerald-800">
                             Xem tất cả bài viết <ArrowRight className="w-4 h-4 ml-1" />
                         </Link>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {blogPosts.length > 0 ? (
-                            blogPosts.map((post) => (
+                        {Array.isArray(blogPosts) && blogPosts.length > 0 ? (
+                            blogPosts.map((post: any) => (
                                 <article key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 flex flex-col group">
                                     <div className="aspect-[16/10] overflow-hidden">
-                                        <img src={getImageUrl(post.image) || 'https://via.placeholder.com/400x250'} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <AgriImage
+                                            src={getImageUrl(post.image) || 'https://via.placeholder.com/400x250'}
+                                            alt={post.title}
+                                            aspectRatio="16/10"
+                                            className="group-hover:scale-105 transition-transform duration-500"
+                                        />
                                     </div>
                                     <div className="p-6 flex-grow flex flex-col">
                                         <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
@@ -189,14 +191,14 @@ export default function Home() {
                                         <p className="text-gray-600 text-sm line-clamp-2 mb-4 flex-grow">
                                             {post.excerpt}
                                         </p>
-                                        <Link href={`/tin-tuc/${post.slug || post.id}`} className="inline-flex items-center text-emerald-600 font-semibold hover:text-emerald-700 text-sm mt-auto">
+                                        <Link href={`/tin-tuc/${post.slug || post.id}`} className="inline-flex items-center text-emerald-700 font-semibold hover:text-emerald-800 text-sm mt-auto">
                                             Đọc chi tiết <ArrowRight className="w-4 h-4 ml-1" />
                                         </Link>
                                     </div>
                                 </article>
                             ))
                         ) : (
-                            <div className="col-span-3 text-center py-8 text-gray-500">Đang tải tin tức...</div>
+                            <div className="col-span-3 text-center py-8 text-gray-500">Chưa có tin tức nào.</div>
                         )}
                     </div>
                 </div>
@@ -218,7 +220,7 @@ export default function Home() {
                                         {cat.title}
                                     </h2>
                                 </div>
-                                <Link href={cat.link} className="hidden md:flex items-center text-emerald-600 font-semibold hover:text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full transition-colors">
+                                <Link href={cat.link} className="hidden md:flex items-center text-emerald-700 font-semibold hover:text-emerald-800 bg-emerald-50 px-4 py-2 rounded-full transition-colors">
                                     Xem tất cả <ChevronRight className="w-4 h-4 ml-1" />
                                 </Link>
                             </div>
@@ -232,7 +234,7 @@ export default function Home() {
                             </div>
 
                             <div className="mt-6 text-center md:hidden">
-                                <Link href={cat.link} className="inline-flex items-center text-emerald-600 font-semibold border border-emerald-200 px-6 py-2 rounded-full">
+                                <Link href={cat.link} className="inline-flex items-center text-emerald-700 font-semibold border border-emerald-200 px-6 py-2 rounded-full hover:bg-emerald-50">
                                     Xem thêm {cat.title} <ChevronRight className="w-4 h-4 ml-1" />
                                 </Link>
                             </div>

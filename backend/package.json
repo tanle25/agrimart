@@ -7,7 +7,7 @@
     "scripts": {
         "dev": "PORT=8001 tsx watch src/app.ts",
         "build": "tsc",
-        "start": "node dist/app.js",
+        "start": "PORT=8001 node dist/app.js",
         "lint": "eslint src/**/*.ts"
     },
     "dependencies": {

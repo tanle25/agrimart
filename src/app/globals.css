@@ -519,6 +519,25 @@ textarea {
   }
 }
 
-.animate-fade-out {
-  animation: fade-out 0.2s ease-out forwards;
+/* Accessibility Overrides for Dynamic Content (Green -> Emerald Dark) */
+.text-green-600 {
+  color: #047857 !important;
+  /* emerald-700 */
+}
+
+.bg-green-600 {
+  background-color: #047857 !important;
+  /* emerald-700 */
+}
+
+/* Hide Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }

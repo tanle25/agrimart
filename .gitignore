@@ -40,3 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .agent
+
+# backend
+backend/dist
+backend/node_modules
+
+# lighthouse
+lighthouse-*.json

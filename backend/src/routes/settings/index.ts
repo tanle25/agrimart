@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
-import prisma from '@/services/db.js';
+
+import prisma from '../../services/db.js';
 
 const settingsRoutes: FastifyPluginAsync = async (fastify) => {
     // Get all settings

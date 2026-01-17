@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-import prisma from '@/services/db.js';
+import prisma from '../../services/db.js';
 
 const blogRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get('/', async (request) => {

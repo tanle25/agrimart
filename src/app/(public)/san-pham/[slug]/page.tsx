@@ -3,7 +3,7 @@ import ProductDetailClient from './ProductDetailClient';
 
 // Helper to fetch data for metadata
 async function getProduct(slug: string) {
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001').replace('localhost', '127.0.0.1');
     try {
         const res = await fetch(`${BACKEND_URL}/api/products/${slug}`, {
             next: { revalidate: 60 } // Revalidate every minute
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const imageUrl = product.image
-        ? (product.image.startsWith('http') ? product.image : `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/${product.image}`)
+        ? (product.image.startsWith('http') ? product.image : `${(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001').replace('localhost', '127.0.0.1')}/${product.image}`)
         : '/placeholder.png';
 
     return {
@@ -42,7 +42,30 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
 }
 
+async function getRelatedProducts(category: string, currentId: string | number) {
+    const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001').replace('localhost', '127.0.0.1');
+    if (!category) return [];
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/products?limit=4&category=${encodeURIComponent(category)}`, {
+            next: { revalidate: 300 }
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data.products || []).filter((p: any) => p.id !== currentId);
+    } catch (e) {
+        console.error("Failed to fetch related products server-side", e);
+        return [];
+    }
+}
+
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    return <ProductDetailClient slug={slug} />;
+    const product = await getProduct(slug);
+
+    let relatedProducts: any[] = [];
+    if (product) {
+        relatedProducts = await getRelatedProducts(product.category, product.id);
+    }
+
+    return <ProductDetailClient slug={slug} initialProduct={product} initialRelatedProducts={relatedProducts} />;
 }
