@@ -87,8 +87,8 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
 
 
   return (
-    <div className="min-h-screen flex flex-col relative">
-      <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
+    <div className="min-h-screen flex flex-col">
+      <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100 h-16 flex-shrink-0">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -97,7 +97,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                 <div className="h-10 w-10 relative">
                   <AgriImage
                     src={settings.general.logo}
-                    alt={settings.general.siteTitle}
+                    alt=""
                     className="rounded-lg object-contain"
                     width={40}
                     height={40}
@@ -340,53 +340,62 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
         )}
       </header>
 
-      <main className="flex-grow bg-white">
+      <main className="flex-1 bg-white overflow-auto">
         {children}
       </main>
 
-      <footer className="bg-emerald-900 text-emerald-100 py-8">
-        <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
-          <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-white p-1 rounded">
+      <footer className="bg-emerald-900 text-emerald-100 flex-shrink-0 py-8">
+        <div className="container mx-auto px-4">
+          <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="col-span-2 md:col-span-1">
+              <div className="flex items-center gap-3 mb-3">
                 {settings.general.logo ? (
-                  <img src={settings.general.logo} alt="AgriMart" className="h-6 w-auto" />
+                  <div className="h-8 w-32 relative">
+                    <AgriImage
+                      src={settings.general.logo}
+                      alt=""
+                      className="object-contain"
+                      fill
+                      sizes="128px"
+                      priority
+                    />
+                  </div>
                 ) : (
-                  <div className="bg-emerald-700 p-1.5 rounded-lg">
-                    <Leaf className="w-5 h-5 text-white" />
+                  <div className="bg-emerald-700 p-2 rounded-lg">
+                    <Leaf className="w-6 h-6 text-white" />
                   </div>
                 )}
+                <span className="text-lg font-bold text-white">{settings.general.siteTitle}</span>
               </div>
-              <span className="text-lg font-bold text-white">{settings.general.siteTitle}</span>
+              <p className="text-emerald-200/80 text-sm leading-relaxed max-w-xs">
+                {settings.general.tagline}
+              </p>
             </div>
-            <p className="text-emerald-200/80 text-xs leading-relaxed max-w-xs">
-              {settings.general.tagline}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Liên kết</h3>
-            <ul className="space-y-1 text-xs">
-              <li><Link href="/chinh-sach-bao-mat" className="block py-2 hover:text-white transition-colors">Chính sách bảo mật</Link></li>
-              <li><Link href="/dieu-khoan-dich-vu" className="block py-2 hover:text-white transition-colors">Điều khoản dịch vụ</Link></li>
-              <li><Link href="/chinh-sach-van-chuyen" className="block py-2 hover:text-white transition-colors">Chính sách vận chuyển</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Danh mục</h3>
-            <ul className="space-y-1 text-xs">
-              <li><Link href="/san-pham" className="block py-2 hover:text-white transition-colors">Rau củ hữu cơ</Link></li>
-              <li><Link href="/san-pham" className="block py-2 hover:text-white transition-colors">Trái cây tươi</Link></li>
-              <li><Link href="/san-pham" className="block py-2 hover:text-white transition-colors">Thực phẩm khô</Link></li>
-            </ul>
-          </div>
-          <div className="col-span-2 md:col-span-1">
-            <h3 className="text-white font-bold text-sm mb-3 uppercase tracking-wider">Liên hệ</h3>
-            <p className="text-xs text-emerald-200/80 mb-1">Hotline: {settings.store.phone}</p>
-            <p className="text-xs text-emerald-200/80 mb-1">Email: {settings.store.email}</p>
-            <p className="text-xs text-emerald-200/80">Đ/c: {settings.store.address}</p>
+            <div>
+              <h3 className="text-white font-bold text-sm mb-2 uppercase tracking-wider">Liên kết</h3>
+              <ul className="space-y-1 text-xs">
+                <li><Link href="/chinh-sach-bao-mat" className="block py-1 hover:text-white transition-colors">Chính sách bảo mật</Link></li>
+                <li><Link href="/dieu-khoan-dich-vu" className="block py-1 hover:text-white transition-colors">Điều khoản dịch vụ</Link></li>
+                <li><Link href="/chinh-sach-van-chuyen" className="block py-1 hover:text-white transition-colors">Chính sách vận chuyển</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm mb-2 uppercase tracking-wider">Danh mục</h3>
+              <ul className="space-y-1 text-xs">
+                <li><Link href="/san-pham" className="block py-1 hover:text-white transition-colors">Rau củ hữu cơ</Link></li>
+                <li><Link href="/san-pham" className="block py-1 hover:text-white transition-colors">Trái cây tươi</Link></li>
+                <li><Link href="/san-pham" className="block py-1 hover:text-white transition-colors">Thực phẩm khô</Link></li>
+              </ul>
+            </div>
+            <div className="col-span-2 md:col-span-1">
+              <h3 className="text-white font-bold text-sm mb-2 uppercase tracking-wider">Liên hệ</h3>
+              <p className="text-xs text-emerald-200/80 mb-1">Hotline: {settings.store.phone}</p>
+              <p className="text-xs text-emerald-200/80 mb-1">Email: {settings.store.email}</p>
+              <p className="text-xs text-emerald-200/80">Đ/c: {settings.store.address}</p>
+            </div>
           </div>
         </div>
-        <div className="container mx-auto px-4 mt-6 pt-6 border-t border-emerald-800 text-center text-[10px] text-emerald-400">
+        <div className="container mx-auto px-4 mt-4 pt-4 border-t border-emerald-800 text-center text-[10px] text-emerald-400">
           © {new Date().getFullYear()} {settings.general.siteTitle}. All rights reserved.
         </div>
       </footer>

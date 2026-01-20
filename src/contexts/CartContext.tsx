@@ -24,11 +24,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Load from localStorage on mount
+    // Initialize cart from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('cart');
         if (saved) {
             try {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setCartItems(JSON.parse(saved));
             } catch (e) {
                 console.error("Failed to parse cart", e);
@@ -37,7 +38,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoaded(true);
     }, []);
 
-    // Save to localStorage on change
+    // Save to localStorage whenever cartItems changes, but only after initial load
     useEffect(() => {
         if (isLoaded) {
             localStorage.setItem('cart', JSON.stringify(cartItems));

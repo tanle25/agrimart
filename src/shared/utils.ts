@@ -3,7 +3,7 @@ export const getImageUrl = (url: string) => {
     if (url.startsWith('http') || url.startsWith('data:')) return url;
 
     // Get backend URL from env or default
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
     // Ensure no double slash if backend_url ends with / or url starts with /
     const baseUrl = BACKEND_URL.replace(/\/+$/, '');

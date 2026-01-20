@@ -47,3 +47,8 @@ backend/node_modules
 
 # lighthouse
 lighthouse-*.json
+.gemini/
+.claude/
+.cursor/
+.opencode/
+backend/public/uploads/cache/

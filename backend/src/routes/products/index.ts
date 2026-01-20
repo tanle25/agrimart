@@ -4,6 +4,7 @@ import prisma from '../../services/db.js';
 
 const productRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get('/categories', async (request, reply) => {
+        reply.header('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
         try {
             // 1. Fetch all product categories from master list
             const allCategories = await prisma.productCategory.findMany({
@@ -38,38 +39,46 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     fastify.get('/price-range', async (request, reply) => {
+        reply.header('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
         try {
-            // Get max price from simple products
-            const maxSimpleProduct = await prisma.product.findFirst({
-                where: { type: 'simple', status: 'active' },
-                orderBy: { price: 'desc' },
-                select: { price: true }
+            // 1. Get simple products max price
+            // Assuming 'price' is the effective selling price for simple products
+            const maxSimpleData = await prisma.product.aggregate({
+                _max: { price: true },
+                where: { type: 'simple', status: 'active' }
             });
+            const maxSimple = maxSimpleData._max.price || 0;
 
-            // Get max price from variants (active products)
-            const maxVariant = await prisma.variant.findFirst({
+            // 2. Get variants max effective price
+            // We need to check salePrice vs price for each variant
+            // Fetching all variant prices is safe enough for reasonable catalog size
+            // If catalog grows huge, we should switch back to optimize Raw SQL with correct table names
+            const variants = await prisma.variant.findMany({
                 where: { product: { status: 'active' } },
-                orderBy: { price: 'desc' },
-                select: { price: true }
+                select: { price: true, salePrice: true }
             });
 
-            const maxSimplePrice = maxSimpleProduct?.price || 0;
-            const maxVariantPrice = maxVariant?.price || 0;
+            let maxVariant = 0;
+            for (const v of variants) {
+                // Effective price logic: use salePrice if valid (>0), else price
+                const effective = (v.salePrice && v.salePrice > 0) ? v.salePrice : v.price;
+                if (effective > maxVariant) maxVariant = effective;
+            }
 
-            const maxPrice = Math.max(maxSimplePrice, maxVariantPrice);
+            const maxPrice = Math.max(maxSimple, maxVariant);
 
-            // Round up to nearest next magnitude or just clean number? 
-            // User step is 1000. Let's return exact or slightly padded.
-            // Let's return the exact max found, frontend can ceil it.
-
-            return { min: 0, max: maxPrice || 0 }; // Return 0 if no max price found
+            // Default fallback if no products found
+            return { min: 0, max: maxPrice || 10000000 };
         } catch (e) {
             request.log.error(e);
             return { min: 0, max: 0 };
         }
     });
 
-    fastify.get('/', async (request) => {
+    fastify.get('/', async (request, reply) => {
+        // Enable caching for listing
+        reply.header('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=59');
+
         const {
             page = 1,
             limit = 12,
@@ -114,6 +123,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
             AND.push({
                 OR: [
                     // Case 1: Simple Product - Filter by main price
+                    // Assumption: For simple products, 'price' is the current selling price
                     {
                         type: 'simple',
                         price: { gte: min, lte: max }
@@ -153,7 +163,27 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
                 where,
                 skip,
                 take: Number(limit),
-                include: { variants: true },
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    image: true,
+                    images: true,
+                    price: true,
+                    oldPrice: true,
+                    discount: true,
+                    category: true,
+                    type: true,
+                    status: true,
+                    createdAt: true,
+                    variants: {
+                        select: {
+                            price: true,
+                            salePrice: true
+                            // minimal fields for price calculation
+                        }
+                    }
+                },
                 orderBy
             }),
             prisma.product.count({ where })

@@ -3,10 +3,55 @@ import prisma from '../../services/db.js';
 
 const blogRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get('/', async (request) => {
-        const { limit } = request.query as { limit?: number };
+        const { page = 1, limit, search, category } = request.query as {
+            page?: number | string,
+            limit?: number | string,
+            search?: string,
+            category?: string
+        };
+
+        const where: any = {};
+
+        if (search) {
+            where.OR = [
+                { title: { contains: search } }, // Case insensitive usually handled by DB collation or provider
+                { excerpt: { contains: search } }
+            ];
+        }
+
+        if (category && category !== 'Tất cả') {
+            const categories = category.split(',').filter(c => c && c !== 'Tất cả');
+            if (categories.length > 0) {
+                where.category = {
+                    name: { in: categories }
+                };
+            }
+        }
+
+        // If limit is provided, use pagination
+        if (limit) {
+            const pageNum = Number(page);
+            const limitNum = Number(limit);
+            const skip = (pageNum - 1) * limitNum;
+
+            const [items, total] = await Promise.all([
+                prisma.blogPost.findMany({
+                    where,
+                    include: { category: true },
+                    skip,
+                    take: limitNum,
+                    orderBy: { date: 'desc' }
+                }),
+                prisma.blogPost.count({ where })
+            ]);
+
+            return { items, total };
+        }
+
+        // Fallback for backward compatibility (return all array)
         return prisma.blogPost.findMany({
+            where,
             include: { category: true },
-            take: limit ? Number(limit) : undefined,
             orderBy: { date: 'desc' }
         });
     });

@@ -36,6 +36,10 @@ export default function RootLayout({
     <html lang="vi">
       <head>
         <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'} />
+        <link rel="preconnect" href="https://picsum.photos" />
+        <link rel="preconnect" href="https://fastly.picsum.photos" />
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://placehold.co" />
       </head>
       <body className={inter.className}>
         <ToastProvider>

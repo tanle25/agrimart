@@ -49,6 +49,174 @@ textarea.text-editor-input {
   caret-color: #aeafad;
 }
 
+/* ========================================= */
+/*           RANGE INPUT STYLING             */
+/* ========================================= */
+
+/* Remove default styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Chrome, Safari, Opera */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #059669;
+  /* emerald-600 */
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #047857;
+  /* emerald-700 */
+  transform: scale(1.1);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #059669;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #047857;
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(0.95);
+}
+
+/* Remove track styling to allow custom background */
+input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+input[type="range"]::-moz-range-track {
+  background: transparent;
+}
+
+/* ========================================= */
+/*        DUAL RANGE SLIDER STYLING          */
+/* ========================================= */
+
+.dual-range-thumb {
+  pointer-events: none;
+  position: absolute;
+  height: 0;
+  width: 100%;
+  outline: none;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.dual-range-thumb::-webkit-slider-thumb {
+  pointer-events: all;
+  position: relative;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #059669;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dual-range-thumb::-moz-range-thumb {
+  pointer-events: all;
+  position: relative;
+  -moz-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #059669;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dual-range-thumb::-webkit-slider-thumb:hover {
+  background: #047857;
+  transform: scale(1.1);
+}
+
+.dual-range-thumb::-moz-range-thumb:hover {
+  background: #047857;
+  transform: scale(1.1);
+}
+
+.dual-range-thumb::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+
+.dual-range-thumb::-moz-range-thumb:active {
+  transform: scale(0.95);
+}
+
+/* ========================================= */
+/*          PRICE DISPLAY STYLING            */
+/* ========================================= */
+
+.price-display {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================= */
+/*       ACCESSIBILITY - FOCUS STYLES        */
+/* ========================================= */
+
+/* Global focus-visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #059669;
+  /* emerald-600 */
+  outline-offset: 2px;
+}
+
+/* Enhanced focus for interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+}
+
+/* Remove focus on mouse/touch interactions */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+
+
+
+
 /* Reduce Typography plugin spacing for a more standard editor feel */
 .prose {
   font-size: 1.05rem;
@@ -540,4 +708,54 @@ textarea {
   /* IE and Edge */
   scrollbar-width: none;
   /* Firefox */
+}
+
+/* ========================================= */
+/*        VAUL DRAWER OPTIMIZATIONS          */
+/* ========================================= */
+
+/* Enable hardware acceleration for smooth drawer animations */
+[vaul-drawer] {
+  touch-action: none;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Overlay fade in/out */
+[vaul-overlay] {
+  animation: fade-in 0.2s ease-out;
+}
+
+[vaul-overlay][data-state='closed'] {
+  animation: fade-out 0.2s ease-out;
+}
+
+/* Drawer slide animations */
+[vaul-drawer][data-state='open'] {
+  animation: drawer-up 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[vaul-drawer][data-state='closed'] {
+  animation: drawer-down 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+  [vaul-drawer],
+  [vaul-overlay] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Safe area inset for iOS devices */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent overscroll on drawer content */
+[vaul-drawer] {
+  overscroll-behavior: contain;
 }

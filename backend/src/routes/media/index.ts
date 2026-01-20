@@ -28,7 +28,7 @@ const mediaRoutes: FastifyPluginAsync = async (fastify) => {
 
     fastify.get('/:filename', async (request, reply) => {
         const { filename } = request.params as { filename: string };
-        const query = request.query as { w?: string; h?: string; q?: string };
+        const query = request.query as { w?: string; h?: string; q?: string; fmt?: string };
         const filepath = join(UPLOAD_DIR, filename);
 
         // Check if file exists
@@ -39,17 +39,53 @@ const mediaRoutes: FastifyPluginAsync = async (fastify) => {
             return reply.code(404).send({ error: 'File not found' });
         }
 
-        // If no resize needed, send file directly
-        if (!query.w && !query.h && !query.q) {
+        // Default to webp if requested or if originally webp
+        const targetFormat = query.fmt === 'webp' ? 'webp' :
+            filename.toLowerCase().endsWith('.webp') ? 'webp' :
+                filename.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+
+        // If no resize AND no format change needed, send file directly
+        const isOriginalFormat = (targetFormat === 'webp' && filename.toLowerCase().endsWith('.webp')) ||
+            (targetFormat === 'png' && filename.toLowerCase().endsWith('.png')) ||
+            (targetFormat === 'jpeg' && (filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')));
+
+        if (!query.w && !query.h && !query.q && isOriginalFormat) {
+            reply.header('Cache-Control', 'public, max-age=31536000, immutable');
             return reply.sendFile(`uploads/${filename}`);
+        }
+
+        // Create cache key
+        const width = query.w ? parseInt(query.w) : undefined;
+        const height = query.h ? parseInt(query.h) : undefined;
+        const quality = query.q ? parseInt(query.q) : 80;
+
+        const { parse } = await import('path');
+        const parsed = parse(filename);
+        const cacheFilename = `${parsed.name}_w${width || 'auto'}_h${height || 'auto'}_q${quality}.${targetFormat}`;
+        const cacheDir = join(UPLOAD_DIR, 'cache');
+        const cachePath = join(cacheDir, cacheFilename);
+
+        // Ensure cache directory exists
+        const { mkdir } = await import('fs/promises');
+        await mkdir(cacheDir, { recursive: true });
+
+        // Check if cached file exists
+        try {
+            await stat(cachePath);
+            // If exists, serve it
+            const mimeType = targetFormat === 'webp' ? 'image/webp' :
+                targetFormat === 'png' ? 'image/png' : 'image/jpeg';
+            reply.header('Content-Type', mimeType);
+            reply.header('Cache-Control', 'public, max-age=31536000, immutable');
+            reply.header('X-Cache', 'HIT'); // Debug header
+            return reply.sendFile(`uploads/cache/${cacheFilename}`);
+        } catch {
+            // Not cached, proceed to process
         }
 
         // Process image with sharp
         try {
             const sharp = (await import('sharp')).default;
-            const width = query.w ? parseInt(query.w) : undefined;
-            const height = query.h ? parseInt(query.h) : undefined;
-            const quality = query.q ? parseInt(query.q) : 80;
 
             const buffer = await readFile(filepath);
             let imagePipeline = sharp(buffer);
@@ -61,24 +97,25 @@ const mediaRoutes: FastifyPluginAsync = async (fastify) => {
                 });
             }
 
-            // Optimize based on file type
-            if (filename.toLowerCase().endsWith('.webp')) {
+            // Convert to target format
+            if (targetFormat === 'webp') {
                 imagePipeline = imagePipeline.webp({ quality });
-            } else if (filename.toLowerCase().endsWith('.jpeg') || filename.toLowerCase().endsWith('.jpg')) {
+            } else if (targetFormat === 'jpeg') {
                 imagePipeline = imagePipeline.jpeg({ quality });
-            } else if (filename.toLowerCase().endsWith('.png')) {
-                // PNG compression is different (0-9)
+            } else if (targetFormat === 'png') {
                 imagePipeline = imagePipeline.png({ quality: quality > 100 ? 100 : quality });
             }
 
-            const processedBuffer = await imagePipeline.toBuffer();
+            // Save to cache FIRST, then send
+            await imagePipeline.toFile(cachePath);
 
-            const mimeType = filename.toLowerCase().endsWith('.webp') ? 'image/webp' :
-                filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+            const mimeType = targetFormat === 'webp' ? 'image/webp' :
+                targetFormat === 'png' ? 'image/png' : 'image/jpeg';
 
             reply.header('Content-Type', mimeType);
             reply.header('Cache-Control', 'public, max-age=31536000, immutable');
-            return reply.send(processedBuffer);
+            reply.header('X-Cache', 'MISS');
+            return reply.sendFile(`uploads/cache/${cacheFilename}`);
         } catch (err) {
             request.log.error(err);
             // Fallback to original file

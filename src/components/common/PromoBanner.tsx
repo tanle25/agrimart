@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { AgriImage } from '@/components/ui/AgriImage';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
@@ -88,11 +89,14 @@ export default function PromoBanner({ className = "" }: { className?: string }) 
     if (!item) return null;
 
     const Content = (
-        <div className={`rounded-2xl overflow-hidden relative aspect-[4/5] group cursor-pointer shadow-sm hover:shadow-md transition-all ${className}`}>
-            <img
+        <div className={`rounded-2xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-md transition-all ${className}`} style={{ minHeight: '375px' }}>
+            <AgriImage
                 src={item.image || DEFAULT_ITEM.image}
                 alt={item.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                aspectRatio="4/5"
+                className="transition-transform duration-700 group-hover:scale-110"
+                sizes="300px"
+                quality={55}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-8 flex flex-col justify-end text-center">
                 <span className="text-yellow-400 font-bold tracking-wider text-sm mb-2 uppercase">

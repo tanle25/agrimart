@@ -1,165 +1,128 @@
-"use client";
-
 import React from 'react';
 import Link from 'next/link';
 import { Product } from '@/shared/types';
-import { formatCurrency, getImageUrl } from '@/shared/utils';
-import { ShoppingCart, Star, Heart } from 'lucide-react';
+import { getImageUrl } from '@/shared/utils';
 import { AgriImage } from '@/components/ui/AgriImage';
+import { AddToCartButton } from './AddToCartButton';
 
 interface ProductCardProps {
     product: Product;
+    priority?: boolean;
 }
 
-import { useCart } from '@/contexts/CartContext';
-import { useToast } from '@/contexts/ToastContext';
-import { useRouter } from 'next/navigation';
+/**
+ * Vietnamese currency formatter using Intl API
+ */
+const formatVietnameseCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        minimumFractionDigits: 0
+    }).format(amount);
+};
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-    const { addToCart } = useCart();
-    const { success } = useToast();
-    const router = useRouter();
+const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
 
-    // Logic to determine price display
-    let priceDisplay;
-    let oldPriceDisplay = null;
+    /**
+     * Calculate price display logic
+     * Logic: For variable products with multiple variants:
+     * - Current price = LOWEST sale/promotional price
+     * - Old price = HIGHEST original price
+     */
+    const getPriceInfo = () => {
+        if (product.type === 'variable' && product.variants && product.variants.length > 0) {
+            // Calculate current prices (sale price if available, else regular price)
+            const currentPrices = product.variants.map((v: any) =>
+                v.salePrice > 0 ? v.salePrice : v.price
+            );
 
-    // Map variants to get current and original prices paired
-    if (product.type === 'variable' && product.variants && product.variants.length > 0) {
-        // Map variants to get current and original prices paired
-        const priceMap = product.variants.map((v: any) => ({
-            current: v.salePrice > 0 ? v.salePrice : v.price,
-            original: v.price
-        }));
+            // Calculate original prices
+            const originalPrices = product.variants.map((v: any) => v.price);
 
-        // Find the option with the lowest current price
-        const bestOption = priceMap.reduce((min, curr) =>
-            curr.current < min.current ? curr : min
-            , priceMap[0]);
+            // Get min current price and max original price
+            const minCurrentPrice = Math.min(...currentPrices);
+            const maxOriginalPrice = Math.max(...originalPrices);
 
-        priceDisplay = formatCurrency(bestOption.current);
-
-        // Only show old price if it's different from current (i.e., on sale)
-        if (bestOption.original > bestOption.current) {
-            oldPriceDisplay = formatCurrency(bestOption.original);
+            return {
+                display: formatVietnameseCurrency(minCurrentPrice),
+                oldPrice: minCurrentPrice < maxOriginalPrice
+                    ? formatVietnameseCurrency(maxOriginalPrice)
+                    : null
+            };
         }
-    } else {
-        priceDisplay = formatCurrency(product.salePrice || product.price);
-        if (product.salePrice && product.salePrice < product.price) {
-            oldPriceDisplay = formatCurrency(product.price);
-        } else if ((product.oldPrice || 0) > 0) {
-            oldPriceDisplay = formatCurrency(product.oldPrice!);
-        }
-    }
 
+        // Simple product
+        // Assuming undefined/null salePrice means no sale, or check strict logic
+        const currentPrice = (product.salePrice && product.salePrice > 0) ? product.salePrice : product.price;
+        const hasDiscount = product.salePrice && product.salePrice < product.price;
+
+        return {
+            display: formatVietnameseCurrency(currentPrice),
+            oldPrice: hasDiscount ? formatVietnameseCurrency(product.price) : null
+        };
+    };
+
+    const priceInfo = getPriceInfo();
     const imageUrl = getImageUrl(product.image || product.images?.[0] || '');
-    const rating = product.rating || 4.5; // Mock rating if missing for visual check
-
-    const handleAddToCart = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (product.type === 'variable') {
-            router.push(`/san-pham/${product.slug || product.id}`);
-            return;
-        }
-
-        addToCart(product, 1);
-        success(`Đã thêm "${product.name}" vào giỏ hàng`);
-    };
-
-    const renderStars = (rating: number) => {
-        return (
-            <div className="flex gap-0.5" title={`Đánh giá: ${rating} sao`}>
-                {[...Array(5)].map((_, i) => (
-                    <Star
-                        key={i}
-                        size={12}
-                        className={`${i < Math.round(rating) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`}
-                    />
-                ))}
-            </div>
-        );
-    };
 
     return (
         <div className="w-full h-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:translate-y-[-4px] transition-all duration-300 group font-sans flex flex-col relative">
             {/* Image Section */}
-            <div className="relative aspect-square overflow-hidden bg-gray-50 shrink-0">
-                <Link href={`/san-pham/${product.slug || product.id}`}>
+            <div className="relative w-full bg-white shrink-0 aspect-[4/3]">
+                <Link href={`/san-pham/${product.slug || product.id}`} className="block w-full h-full relative">
                     <AgriImage
                         src={imageUrl || '/placeholder.png'}
-                        alt={product.name}
-                        aspectRatio="1/1"
-                        className="transition-transform duration-500 group-hover:scale-105"
+                        alt={`Ảnh sản phẩm ${product.name}`}
+                        sizes="(max-width: 768px) 180px, 25vw"
+                        objectFit="cover"
+                        className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+                        priority={priority}
+                        fetchPriority={priority ? 'high' : 'auto'}
+                        decoding="async"
+                        quality={60}
                     />
                 </Link>
 
-                {/* Badges */}
-                {(product.discount || 0) > 0 && (
+                {/* Discount Badge */}
+                {((product.discount || 0) > 0 || (product.salePrice && product.salePrice < product.price)) && (
                     <div className="absolute top-3 left-3 z-10">
                         <span className="bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
-                            -{product.discount}%
+                            -{product.discount ? product.discount : Math.round(((product.price - product.salePrice!) / product.price) * 100)}%
                         </span>
                     </div>
                 )}
-
-                {/* Wishlist Button */}
-                <button
-                    aria-label={`Thêm ${product.name} vào danh sách yêu thích`}
-                    className="absolute top-3 right-3 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-500 hover:text-rose-500 hover:bg-white transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 duration-300 shadow-sm cursor-pointer"
-                >
-                    <Heart size={18} />
-                </button>
             </div>
 
             {/* Content Section */}
-            <div className="p-5 flex flex-col flex-grow">
-                {/* Category & Rating */}
-                <div className="flex items-start justify-between mb-2 gap-2">
-                    <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider bg-emerald-50 px-2 py-0.5 rounded-md truncate">
+            <div className="p-3 md:p-5 flex flex-col flex-grow">
+                {/* Category */}
+                <div className="mb-2">
+                    <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider bg-emerald-50 px-2 py-0.5 rounded-md truncate inline-block">
                         {product.category}
                     </span>
-                    {rating > 0 && renderStars(rating)}
                 </div>
 
                 {/* Title */}
                 <Link href={`/san-pham/${product.slug || product.id}`} className="mb-2 block flex-grow">
-                    <h3 className="text-gray-800 font-bold text-base leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors" title={product.name}>
+                    <h3 className="text-gray-800 font-bold text-sm md:text-base leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors" title={product.name}>
                         {product.name}
                     </h3>
                 </Link>
 
                 {/* Price Block */}
-                <div className="flex items-baseline gap-2 mb-4 mt-auto">
-                    <span className="text-lg font-bold text-emerald-700">
-                        {priceDisplay}
+                <div className="flex items-baseline gap-1 md:gap-2 mb-3 md:mb-4 mt-auto">
+                    <span className="price-display text-base md:text-lg font-bold text-emerald-700">
+                        {priceInfo.display}
                     </span>
-                    {oldPriceDisplay && (
-                        <span className="text-sm text-gray-500 line-through">
-                            {oldPriceDisplay}
+                    {priceInfo.oldPrice && (
+                        <span className="price-display text-xs md:text-sm text-gray-500 line-through">
+                            {priceInfo.oldPrice}
                         </span>
                     )}
                 </div>
 
                 {/* Action Button */}
-                <button
-                    onClick={handleAddToCart}
-                    className={`w-full py-2.5 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 font-medium text-sm border
-                        ${product.type === 'variable'
-                            ? 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer'
-                            : 'bg-emerald-600 text-white border-transparent hover:bg-emerald-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 cursor-pointer'
-                        }`}
-                >
-                    {product.type === 'variable' ? (
-                        <span>Tùy chọn</span>
-                    ) : (
-                        <>
-                            <ShoppingCart size={16} />
-                            <span>Thêm vào giỏ</span>
-                        </>
-                    )}
-                </button>
+                <AddToCartButton product={product} />
             </div>
         </div>
     );

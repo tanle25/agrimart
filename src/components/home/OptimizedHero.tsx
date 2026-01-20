@@ -36,30 +36,30 @@ export default function OptimizedHero({
                 />
             </div>
 
-            <div className="container mx-auto px-4 py-24 md:py-32 relative z-10">
+            <div className="container mx-auto px-4 py-16 md:py-32 relative z-10">
                 <div className="max-w-2xl text-white">
-                    <span className="bg-emerald-500/20 text-emerald-100 text-sm font-semibold px-3 py-1 rounded-full mb-4 inline-block backdrop-blur-sm border border-emerald-500/30">
+                    <span className="bg-emerald-500/20 text-emerald-100 text-xs md:text-sm font-semibold px-3 py-1 rounded-full mb-4 inline-block backdrop-blur-sm border border-emerald-500/30">
                         Nông sản sạch 100% Organic
                     </span>
-                    <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight whitespace-pre-line">
+                    <h1 className="text-3xl md:text-6xl font-bold mb-4 md:mb-6 leading-tight whitespace-pre-line">
                         {title}
                     </h1>
-                    <p className="text-xl text-emerald-100 mb-8 max-w-lg">
+                    <p className="text-base md:text-xl text-emerald-100 mb-6 md:mb-8 max-w-lg">
                         {subtitle}
                     </p>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                         {showButton && (
                             <Link
                                 href={buttonLink}
-                                className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-4 rounded-lg font-bold transition-all transform hover:translate-y-[-2px] shadow-lg shadow-emerald-900/20"
+                                className="inline-flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold transition-all transform hover:translate-y-[-2px] shadow-lg shadow-emerald-900/20 text-sm md:text-base"
                             >
                                 {buttonText}
-                                <ArrowRight className="w-5 h-5" />
+                                <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                             </Link>
                         )}
                         <Link
                             href="/gioi-thieu"
-                            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg font-bold transition-all backdrop-blur-sm"
+                            className="inline-flex justify-center items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold transition-all backdrop-blur-sm text-sm md:text-base hover:bg-white/20"
                         >
                             Tìm hiểu thêm
                         </Link>

@@ -29,10 +29,19 @@ export interface GlobalSettings {
     appearance?: {
         hero?: {
             mode: string;
-            items: any[];
+            items: HeroItem[];
         };
-        [key: string]: any;
+        // Allow other appearance keys but try to be specific where possible
+        [key: string]: unknown;
     };
+}
+
+export interface HeroItem {
+    id: string;
+    image: string;
+    title?: string;
+    link?: string;
+    [key: string]: unknown;
 }
 
 export const defaultSettings: GlobalSettings = {
