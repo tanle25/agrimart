@@ -2,14 +2,28 @@ import React from 'react';
 import Link from 'next/link';
 import { Calendar, User, Clock, ChevronRight, Facebook, Twitter, Linkedin, Search, MessageSquare } from 'lucide-react';
 import PromoBanner from '@/components/common/PromoBanner';
+import { AgriImage } from '@/components/ui/AgriImage';
+import { getImageUrl } from '@/shared/utils';
 
 // Use same BACKEND_URL as homepage or internal network URL if server-to-server
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+
+// Safe date formatter
+function formatDate(dateString: string | null | undefined): string {
+    if (!dateString) return 'Chưa cập nhật';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Chưa cập nhật';
+        return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+        return 'Chưa cập nhật';
+    }
+}
 
 async function getBlogPost(slug: string) {
     try {
         const res = await fetch(`${BACKEND_URL}/api/blog/${slug}`, {
-            cache: 'no-store' // Ensure fresh data
+            next: { revalidate: 60 } // Cache for 60 seconds, enable BFCache
         });
         if (!res.ok) return null;
         return res.json();
@@ -22,11 +36,12 @@ async function getBlogPost(slug: string) {
 async function getRelatedPosts(excludeId: number) {
     try {
         // Fetch latest 4 and filter (simple limitation of current API)
-        // Or better, update API to support related/exclude. For now, fetch latest 3.
-        const res = await fetch(`${BACKEND_URL}/api/blog?limit=4`, { cache: 'no-store' });
+        const res = await fetch(`${BACKEND_URL}/api/blog?limit=4`, { next: { revalidate: 300 } });
         if (!res.ok) return [];
-        const posts = await res.json();
-        return Array.isArray(posts) ? posts.filter((p: any) => p.id !== excludeId).slice(0, 3) : [];
+        const data = await res.json();
+        // API returns { items, total } when limit is provided
+        const posts = Array.isArray(data) ? data : (data.items || []);
+        return posts.filter((p: any) => p.id !== excludeId).slice(0, 3);
     } catch (e) {
         console.error("Failed to fetch related posts", e);
         return [];
@@ -57,11 +72,15 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
     return (
         <div className="bg-white min-h-screen pb-20 font-sans">
             {/* Hero Section - Immersive Design */}
-            <div className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
-                <img
-                    src={post.image || 'https://via.placeholder.com/1200x600'}
+            <div className="relative h-[50vh] md:h-[60vh] min-h-[350px] md:min-h-[500px] w-full overflow-hidden">
+                <AgriImage
+                    src={getImageUrl(post.image) || 'https://via.placeholder.com/1200x600'}
                     alt={post.title}
-                    className="absolute inset-0 w-full h-full object-cover transform scale-105"
+                    aspectRatio="16/9"
+                    priority={true}
+                    fetchPriority="high"
+                    className="w-full h-full"
+                    objectFit="cover"
                 />
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
@@ -69,15 +88,15 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                 <div className="absolute inset-0 flex items-end pb-16">
                     <div className="container mx-auto px-4">
                         <div className="max-w-4xl">
-                            <div className="flex items-center gap-3 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                <span className="bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                <span className="bg-emerald-500 text-white text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                                     {post.category?.name || 'Tin tức'}
                                 </span>
-                                <span className="text-gray-300 text-sm flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" /> {new Date(post.date).toLocaleDateString('vi-VN')}
+                                <span className="text-gray-300 text-xs md:text-sm flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5" /> {formatDate(post.date)}
                                 </span>
                             </div>
-                            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                            <h1 className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-white mb-4 md:mb-6 leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                                 {post.title}
                             </h1>
                             <div className="flex items-center gap-6 text-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
@@ -102,17 +121,17 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
             </div>
 
             <div className="container mx-auto px-4 py-12">
-                <div className="flex flex-col lg:flex-row gap-16">
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
 
                     {/* Main Content Area */}
                     <div className="lg:w-2/3">
                         {/* Breadcrumb */}
-                        <nav className="flex items-center gap-2 text-sm text-gray-500 mb-10">
-                            <Link href="/" className="hover:text-emerald-600 transition-colors">Trang chủ</Link>
-                            <ChevronRight className="w-4 h-4 text-gray-300" />
-                            <Link href="/tin-tuc" className="hover:text-emerald-600 transition-colors">Blog</Link>
-                            <ChevronRight className="w-4 h-4 text-gray-300" />
-                            <span className="text-gray-900 font-medium truncate max-w-[200px]">{post.title}</span>
+                        <nav className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-500 mb-6 md:mb-10 overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+                            <Link href="/" className="hover:text-emerald-600 transition-colors shrink-0">Trang chủ</Link>
+                            <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-gray-300 shrink-0" />
+                            <Link href="/tin-tuc" className="hover:text-emerald-600 transition-colors shrink-0">Blog</Link>
+                            <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-gray-300 shrink-0" />
+                            <span className="text-gray-900 font-medium truncate max-w-[120px] md:max-w-[200px]">{post.title}</span>
                         </nav>
 
                         {/* Article */}
@@ -125,28 +144,34 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                         </article>
 
                         {/* Tags & Share */}
-                        <div className="mt-12 pt-8 border-t border-gray-100">
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                                <div className="flex gap-2">
-                                    <span className="text-gray-500 font-medium mr-2">Tags:</span>
+                        <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-gray-100">
+                            <div className="flex flex-col gap-4 md:gap-6">
+                                {/* Tags Row */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-gray-500 font-medium text-sm">Tags:</span>
                                     {post.mainKeyword && (
-                                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-emerald-50 hover:text-emerald-600 cursor-pointer transition-colors">#{post.mainKeyword.replace(/\s+/g, '')}</span>
+                                        <span className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-xs md:text-sm hover:bg-emerald-50 hover:text-emerald-600 cursor-pointer transition-colors max-w-[150px] truncate">
+                                            #{post.mainKeyword.replace(/\s+/g, '').slice(0, 20)}
+                                        </span>
                                     )}
-                                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-emerald-50 hover:text-emerald-600 cursor-pointer transition-colors">#NongSanSach</span>
+                                    <span className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-xs md:text-sm hover:bg-emerald-50 hover:text-emerald-600 cursor-pointer transition-colors">
+                                        #NongSanSach
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <span className="text-gray-900 font-bold">Chia sẻ:</span>
-                                    <button className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Facebook className="w-5 h-5" /></button>
-                                    <button className="w-10 h-10 rounded-full bg-sky-100 text-sky-500 flex items-center justify-center hover:bg-sky-500 hover:text-white transition-all"><Twitter className="w-5 h-5" /></button>
-                                    <button className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center hover:bg-indigo-700 hover:text-white transition-all"><Linkedin className="w-5 h-5" /></button>
+                                {/* Share Row */}
+                                <div className="flex items-center gap-3">
+                                    <span className="text-gray-900 font-bold text-sm">Chia sẻ:</span>
+                                    <button aria-label="Chia sẻ lên Facebook" className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all"><Facebook className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                    <button aria-label="Chia sẻ lên Twitter" className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-sky-100 text-sky-500 flex items-center justify-center hover:bg-sky-500 hover:text-white transition-all"><Twitter className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                    <button aria-label="Chia sẻ lên LinkedIn" className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center hover:bg-indigo-700 hover:text-white transition-all"><Linkedin className="w-4 h-4 md:w-5 md:h-5" /></button>
                                 </div>
                             </div>
                         </div>
 
                         {/* Author Box */}
-                        <div className="mt-12 bg-gray-50 rounded-2xl p-8 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-                            <div className="w-20 h-20 rounded-full bg-emerald-200 overflow-hidden flex-shrink-0">
-                                <img src={`https://ui-avatars.com/api/?name=${post.author || 'AgriMart'}&background=10b981&color=fff`} alt={post.author} className="w-full h-full object-cover" />
+                        <div className="mt-8 md:mt-12 bg-gray-50 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 text-center md:text-left">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-emerald-200 overflow-hidden flex-shrink-0">
+                                <img src={`https://ui-avatars.com/api/?name=${post.author || 'AgriMart'}&background=10b981&color=fff`} alt={post.author || 'Author'} width={80} height={80} className="w-full h-full object-cover" />
                             </div>
                             <div>
                                 <h4 className="text-lg font-bold text-gray-900 mb-2">Về tác giả: {post.author || 'AgriMart'}</h4>
@@ -155,41 +180,11 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                             </div>
                         </div>
 
-                        {/* Comments Section */}
-                        <div className="mt-16">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-2">
-                                <MessageSquare className="w-6 h-6 text-emerald-600" />
-                                Bình luận (0)
-                            </h3>
-                            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                                <textarea
-                                    className="w-full bg-white border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-emerald-500 outline-none min-h-[120px] transition-all resize-none"
-                                    placeholder="Chia sẻ suy nghĩ của bạn về bài viết này..."
-                                ></textarea>
-                                <div className="flex justify-end mt-4">
-                                    <button className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">
-                                        Gửi bình luận
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Sidebar (Sticky) */}
                     <aside className="lg:w-1/3">
                         <div className="sticky top-24 space-y-10">
-                            {/* Search Widget */}
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                <h3 className="font-bold text-gray-900 mb-4 text-lg">Tìm kiếm</h3>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm bài viết..."
-                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent hover:bg-white hover:border-gray-200 focus:bg-white focus:border-emerald-500 rounded-xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                                    />
-                                    <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                                </div>
-                            </div>
 
                             {/* Related Posts Widget */}
                             <div>
@@ -200,8 +195,8 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                                 <div className="space-y-6">
                                     {relatedPosts.map((p: any) => (
                                         <Link key={p.id} href={`/tin-tuc/${p.slug || p.id}`} className="flex gap-4 group items-start">
-                                            <div className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden relative">
-                                                <img src={p.image || 'https://via.placeholder.com/150'} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-xl overflow-hidden relative">
+                                                <img src={getImageUrl(p.image) || 'https://via.placeholder.com/150'} alt={p.title} width={96} height={96} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             </div>
                                             <div>
                                                 <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 block bg-emerald-50 w-fit px-2 py-0.5 rounded">{p.category?.name || 'Tin tức'}</span>

@@ -37,7 +37,9 @@ async function getBlogPosts(limit: number = 3) {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
         const res = await fetch(`${backendUrl}/api/blog?limit=${limit}`, { next: { revalidate: 3600 } });
         if (!res.ok) return [];
-        return await res.json();
+        const data = await res.json();
+        // API returns { items, total } when limit is provided
+        return Array.isArray(data) ? data : (data.items || []);
     } catch (e) {
         console.error('Failed to fetch blog posts', e);
         return [];
