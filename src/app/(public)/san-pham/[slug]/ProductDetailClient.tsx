@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import NextImage from 'next/image';
+// import NextImage from 'next/image'; 
 import { Product } from '@/shared/types';
 import ProductCard from '@/components/products/ProductCard';
+import { AgriImage } from '@/components/ui/AgriImage';
 import {
     Star,
     Minus,
@@ -254,13 +255,12 @@ export default function ProductDetailClient({
                     {/* LEFT: Image Gallery */}
                     <div className="space-y-6">
                         <div className="aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden bg-gray-50 border border-gray-100 relative group">
-                            <NextImage
+                            <AgriImage
                                 src={activeImage || '/placeholder.png'}
                                 alt={product.name}
-                                fill
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 priority
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             />
                             {(product.discount > 0 || (displayOldPrice > displayPrice)) && (
                                 <div className="absolute top-4 left-4 bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-lg shadow-red-600/30">

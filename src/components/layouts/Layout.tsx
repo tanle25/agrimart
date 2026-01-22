@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -34,6 +34,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { cartCount } = useCart();
   const pathname = usePathname();
@@ -47,6 +48,46 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
     }, 400);
   }, []);
 
+  // ESC key handler and focus trap for mobile menu
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        handleCloseMenu();
+      }
+    };
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (!isMobileMenuOpen || e.key !== 'Tab' || !mobileMenuRef.current) return;
+
+      const focusableElements = mobileMenuRef.current.querySelectorAll(
+        'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0] as HTMLElement;
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement?.focus();
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement?.focus();
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleTab);
+      // Prevent body scroll when menu is open
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('keydown', handleTab);
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isMobileMenuOpen, handleCloseMenu]);
+
   // Focus input when search opens
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -54,10 +95,24 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
     }
   }, [isSearchOpen]);
 
-  // Close search when route changes
+  // Close search when route changes or ESC key pressed
   useEffect(() => {
     setIsSearchOpen(false);
   }, [pathname]);
+
+  // ESC key handler for search overlay
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSearchOpen) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isSearchOpen]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,22 +123,30 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
   };
 
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([]);
+  const hasFetchedCategories = useRef(false);
 
   useEffect(() => {
+    // Only fetch once
+    if (hasFetchedCategories.current) return;
+
     fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001'}/api/products/categories`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setCategories(data);
+          hasFetchedCategories.current = true;
         }
       })
       .catch(err => console.error("Failed to load categories", err));
   }, []);
 
-  const navCategories = categories.map(cat => ({
-    name: cat.name,
-    path: `/san-pham?category=${encodeURIComponent(cat.name)}`
-  }));
+  const navCategories = useMemo(() =>
+    categories.map(cat => ({
+      name: cat.name,
+      path: `/san-pham?category=${encodeURIComponent(cat.name)}`
+    })),
+    [categories]
+  );
 
 
   return (
@@ -119,7 +182,18 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
 
               {/* Categories Dropdown */}
               <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-600 hover:text-emerald-600 font-medium transition-colors py-2 outline-none">
+                <button
+                  className="flex items-center gap-1 text-gray-600 hover:text-emerald-600 font-medium transition-colors py-2 outline-none"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.currentTarget.nextElementSibling?.classList.toggle('opacity-0');
+                      e.currentTarget.nextElementSibling?.classList.toggle('invisible');
+                    }
+                  }}
+                >
                   Danh mục <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
                 </button>
                 <div className="absolute top-full left-0 w-56 bg-white shadow-lg rounded-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-left z-50 mt-1">
@@ -127,13 +201,13 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                     <Link
                       key={idx}
                       href={cat.path}
-                      className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                      className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 transition-colors focus:bg-emerald-50 focus:text-emerald-600 focus:outline-none"
                     >
                       {cat.name}
                     </Link>
                   ))}
                   <div className="border-t border-gray-100 mt-2 pt-2">
-                    <Link href="/san-pham" className="block px-4 py-2 text-xs font-bold text-emerald-700 hover:text-emerald-800 uppercase tracking-wider">
+                    <Link href="/san-pham" className="block px-4 py-2 text-xs font-bold text-emerald-700 hover:text-emerald-800 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-inset">
                       Xem tất cả
                     </Link>
                   </div>
@@ -148,16 +222,21 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                aria-label={isSearchOpen ? "Đóng tìm kiếm" : "Mở tìm kiếm"}
+                aria-label={isSearchOpen ? "Đóng tìm kiếm" : "Tìm kiếm sản phẩm"}
+                aria-expanded={isSearchOpen}
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
                 className={`p-2 transition-colors ${isSearchOpen ? 'text-emerald-700 bg-emerald-50 rounded-full' : 'text-gray-500 hover:text-emerald-700'}`}
               >
                 {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
               </button>
-              <Link href="/gio-hang" aria-label="Giỏ hàng" className="p-2 text-gray-500 hover:text-emerald-700 transition-colors relative">
+              <Link
+                href="/gio-hang"
+                aria-label={cartCount > 0 ? `Giỏ hàng (${cartCount} sản phẩm)` : "Giỏ hàng"}
+                className="p-2 text-gray-500 hover:text-emerald-700 transition-colors relative"
+              >
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-500 rounded-full">
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-500 rounded-full" aria-hidden="true">
                     {cartCount}
                   </span>
                 )}
@@ -168,7 +247,8 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
               </Link>
               <button
                 type="button"
-                aria-label="Menu"
+                aria-label="Mở menu điều hướng"
+                aria-expanded={isMobileMenuOpen}
                 className="md:hidden p-2 text-gray-600"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
@@ -240,12 +320,16 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
 
               {/* Drawer Content */}
               <div
+                ref={mobileMenuRef}
                 className="bg-white w-[85%] max-w-sm h-full shadow-2xl relative flex flex-col"
                 style={{
                   animation: isClosing
                     ? 'slide-out-right-drawer 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
                     : 'slide-in-right-drawer 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
                 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Menu điều hướng chính"
               >
                 {/* Drawer Header */}
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-emerald-900 text-white">

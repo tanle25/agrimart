@@ -158,7 +158,7 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
 
         const where = { AND };
 
-        const [products, total] = await Promise.all([
+        const [productsRaw, total] = await Promise.all([
             prisma.product.findMany({
                 where,
                 skip,
@@ -180,7 +180,6 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
                         select: {
                             price: true,
                             salePrice: true
-                            // minimal fields for price calculation
                         }
                     }
                 },
@@ -188,6 +187,47 @@ const productRoutes: FastifyPluginAsync = async (fastify) => {
             }),
             prisma.product.count({ where })
         ]);
+
+        // Post-process products to calculate display prices and remove heavy variants data
+        const products = productsRaw.map((p: any) => {
+            let displayPrice = p.price;
+            let displayOldPrice = p.oldPrice;
+            let displayDiscount = p.discount;
+
+            if (p.type === 'variable' && p.variants && p.variants.length > 0) {
+                const currentPrices = p.variants.map((v: any) =>
+                    (v.salePrice && v.salePrice > 0) ? v.salePrice : v.price
+                );
+                const originalPrices = p.variants.map((v: any) => v.price);
+
+                const minCurrentPrice = Math.min(...currentPrices);
+                const maxOriginalPrice = Math.max(...originalPrices);
+
+                displayPrice = minCurrentPrice;
+                if (minCurrentPrice < maxOriginalPrice) {
+                    displayOldPrice = maxOriginalPrice;
+                    displayDiscount = Math.round(((maxOriginalPrice - minCurrentPrice) / maxOriginalPrice) * 100);
+                } else {
+                    displayOldPrice = null;
+                    displayDiscount = 0;
+                }
+            } else {
+                // Simple product logic
+                // 'price' in DB is the current selling price. 'oldPrice' is optional original price.
+                displayPrice = p.price;
+                displayOldPrice = p.oldPrice || null;
+                displayDiscount = p.discount || 0;
+            }
+
+            // Return clean object without variants array
+            return {
+                ...p,
+                price: displayPrice,
+                oldPrice: displayOldPrice,
+                discount: displayDiscount,
+                variants: undefined
+            };
+        });
 
         return {
             products,

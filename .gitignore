@@ -52,3 +52,6 @@ lighthouse-*.json
 .cursor/
 .opencode/
 backend/public/uploads/cache/
+
+# Local docs
+docs/

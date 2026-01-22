@@ -10,9 +10,6 @@ interface ProductCardProps {
     priority?: boolean;
 }
 
-/**
- * Vietnamese currency formatter using Intl API
- */
 const formatVietnameseCurrency = (amount: number): string => {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -23,71 +20,49 @@ const formatVietnameseCurrency = (amount: number): string => {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
 
-    /**
-     * Calculate price display logic
-     * Logic: For variable products with multiple variants:
-     * - Current price = LOWEST sale/promotional price
-     * - Old price = HIGHEST original price
-     */
-    const getPriceInfo = () => {
-        if (product.type === 'variable' && product.variants && product.variants.length > 0) {
-            // Calculate current prices (sale price if available, else regular price)
-            const currentPrices = product.variants.map((v: any) =>
-                v.salePrice > 0 ? v.salePrice : v.price
-            );
-
-            // Calculate original prices
-            const originalPrices = product.variants.map((v: any) => v.price);
-
-            // Get min current price and max original price
-            const minCurrentPrice = Math.min(...currentPrices);
-            const maxOriginalPrice = Math.max(...originalPrices);
-
-            return {
-                display: formatVietnameseCurrency(minCurrentPrice),
-                oldPrice: minCurrentPrice < maxOriginalPrice
-                    ? formatVietnameseCurrency(maxOriginalPrice)
-                    : null
-            };
-        }
-
-        // Simple product
-        // Assuming undefined/null salePrice means no sale, or check strict logic
-        const currentPrice = (product.salePrice && product.salePrice > 0) ? product.salePrice : product.price;
-        const hasDiscount = product.salePrice && product.salePrice < product.price;
-
-        return {
-            display: formatVietnameseCurrency(currentPrice),
-            oldPrice: hasDiscount ? formatVietnameseCurrency(product.price) : null
-        };
-    };
-
-    const priceInfo = getPriceInfo();
+    // Use pre-calculated values from backend
+    // Backend now returns 'price' as the current effective price and 'oldPrice' if applicable
+    const priceDisplay = formatVietnameseCurrency(product.price);
+    const oldPriceDisplay = product.oldPrice ? formatVietnameseCurrency(product.oldPrice) : null;
     const imageUrl = getImageUrl(product.image || product.images?.[0] || '');
 
+    // Optimize rendering for off-screen items, but ensure LCP items (priority=true) paint immediately
+    const style: React.CSSProperties = priority ? {} : {
+        contentVisibility: 'auto',
+        contain: 'paint layout'
+    };
+
     return (
-        <div className="w-full h-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:translate-y-[-4px] transition-all duration-300 group font-sans flex flex-col relative">
+        <div
+            className={priority
+                ? "w-full h-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 group font-sans flex flex-col relative"
+                : "w-full h-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:translate-y-[-4px] transition-all duration-300 group font-sans flex flex-col relative"
+            }
+            style={style}
+        >
             {/* Image Section */}
             <div className="relative w-full bg-white shrink-0 aspect-[4/3]">
                 <Link href={`/san-pham/${product.slug || product.id}`} className="block w-full h-full relative">
                     <AgriImage
                         src={imageUrl || '/placeholder.png'}
                         alt={`Ảnh sản phẩm ${product.name}`}
-                        sizes="(max-width: 768px) 180px, 25vw"
+                        sizes="(max-width: 640px) 180px, (max-width: 768px) 180px, 220px"
                         objectFit="cover"
-                        className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+                        className={priority ? "w-full h-full" : "w-full h-full transition-transform duration-500 group-hover:scale-105"}
                         priority={priority}
-                        fetchPriority={priority ? 'high' : 'auto'}
-                        decoding="async"
-                        quality={60}
+                        fetchPriority={priority ? 'high' : 'low'}
+                        decoding={priority ? "sync" : "async"}
+                        quality={priority ? 75 : 50}
+                        loading={priority ? undefined : 'lazy'}
+                        style={priority ? { willChange: 'auto' } : undefined}
                     />
                 </Link>
 
                 {/* Discount Badge */}
-                {((product.discount || 0) > 0 || (product.salePrice && product.salePrice < product.price)) && (
+                {((product.discount || 0) > 0 || (product.oldPrice && product.oldPrice > product.price)) && (
                     <div className="absolute top-3 left-3 z-10">
-                        <span className="bg-rose-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
-                            -{product.discount ? product.discount : Math.round(((product.price - product.salePrice!) / product.price) * 100)}%
+                        <span className="bg-rose-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
+                            -{product.discount ? product.discount : Math.round(((product.oldPrice! - product.price) / product.oldPrice!) * 100)}%
                         </span>
                     </div>
                 )}
@@ -112,11 +87,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) 
                 {/* Price Block */}
                 <div className="flex items-baseline gap-1 md:gap-2 mb-3 md:mb-4 mt-auto">
                     <span className="price-display text-base md:text-lg font-bold text-emerald-700">
-                        {priceInfo.display}
+                        {priceDisplay}
                     </span>
-                    {priceInfo.oldPrice && (
+                    {oldPriceDisplay && (
                         <span className="price-display text-xs md:text-sm text-gray-500 line-through">
-                            {priceInfo.oldPrice}
+                            {oldPriceDisplay}
                         </span>
                     )}
                 </div>

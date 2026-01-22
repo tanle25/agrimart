@@ -326,7 +326,7 @@ export default function ProductsClient({
                                 <div className={`grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-3 md:gap-6 transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
                                     {products.map((product, index) => (
                                         <div key={product.id} className="h-full">
-                                            <ProductCard product={product} priority={index < 6} />
+                                            <ProductCard product={product} priority={index < 8} />
                                         </div>
                                     ))}
                                 </div>

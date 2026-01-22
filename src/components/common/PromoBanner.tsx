@@ -106,7 +106,7 @@ export default function PromoBanner({ className = "" }: { className?: string }) 
                     {item.title}
                 </h3>
                 {item.showButton && (
-                    <button className="bg-emerald-600 text-white py-3 px-6 rounded-xl font-bold hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-900/20 transform group-hover:-translate-y-1 mx-auto flex items-center gap-2">
+                    <button className="bg-emerald-700 text-white py-3 px-6 rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-900/20 transform group-hover:-translate-y-1 mx-auto flex items-center gap-2">
                         {item.buttonText} <ArrowRight className="w-4 h-4" />
                     </button>
                 )}

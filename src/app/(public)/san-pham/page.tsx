@@ -69,15 +69,27 @@ export default async function ProductsPage(props: {
 // Enable caching with revalidation (allows BFCache unlike force-dynamic)
 export const revalidate = 10;
 
+// Force static generation for better performance
+export const dynamic = 'force-static';
+export const dynamicParams = true;
+
+//Generate static params for common cases
+export async function generateStaticParams() {
+    // Generate static version for default page (no params)
+    return [{}];
+}
+
 // Add metadata for SEO and performance hints
 export async function generateMetadata() {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+
     return {
         title: 'Sản phẩm - AgriMart',
         description: 'Khám phá các sản phẩm hữu cơ chất lượng cao',
         other: {
             // Preconnect to backend for faster TTFB
-            'dns-prefetch': process.env.NEXT_PUBLIC_BACKEND_URL,
-            'preconnect': process.env.NEXT_PUBLIC_BACKEND_URL,
+            'dns-prefetch': backendUrl,
+            'preconnect': backendUrl,
         }
     };
 }

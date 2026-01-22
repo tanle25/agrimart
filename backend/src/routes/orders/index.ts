@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import emailService from '../../services/emailService.js';
+import { newOrderCustomerEmail, newOrderAdminEmail } from '../../services/emailTemplates.js';
 
 const prisma = new PrismaClient();
 
@@ -103,6 +105,62 @@ const orderRoutes: FastifyPluginAsync = async (fastify, opts): Promise<void> => 
                     items: true
                 }
             });
+
+            // Send email notifications
+            try {
+                // Prepare email data
+                const emailData = {
+                    orderNumber: order.id.toString().padStart(6, '0'),
+                    customerName: order.customerName,
+                    customerPhone: order.customerPhone,
+                    customerAddress: [order.shippingAddress, order.ward, order.district, order.city]
+                        .filter(Boolean)
+                        .join(', '),
+                    items: order.items.map(item => ({
+                        name: item.productName,
+                        quantity: item.quantity,
+                        price: item.price,
+                        total: item.price * item.quantity
+                    })),
+                    subtotal: totalAmount,
+                    shippingFee: shippingFee,
+                    total: finalTotal,
+                    paymentMethod: order.paymentMethod,
+                    notes: order.note || undefined
+                };
+
+                // Send confirmation email to customer
+                if (order.customerEmail && await emailService.isNotificationEnabled('notifyNewOrder')) {
+                    await emailService.sendEmail({
+                        to: order.customerEmail,
+                        subject: `✅ Xác nhận đơn hàng #${emailData.orderNumber} - AgriMart`,
+                        html: newOrderCustomerEmail(emailData)
+                    });
+                    console.log(`📧 Sent order confirmation to ${order.customerEmail}`);
+                }
+
+                // Send notification to admin
+                if (await emailService.isNotificationEnabled('notifyAdminNewOrder')) {
+                    // Get store email from settings
+                    const storeSettings = await prisma.settings.findUnique({
+                        where: { key: 'store' }
+                    });
+
+                    const adminEmail = storeSettings?.value ? (storeSettings.value as any).email : null;
+
+                    if (adminEmail) {
+                        await emailService.sendEmail({
+                            to: adminEmail,
+                            subject: `🔔 Đơn hàng mới #${emailData.orderNumber} - AgriMart`,
+                            html: newOrderAdminEmail(emailData)
+                        });
+                        console.log(`📧 Sent admin notification to ${adminEmail}`);
+                    }
+                }
+            } catch (emailError) {
+                // Log email error but don't fail the order
+                console.error('Failed to send order emails:', emailError);
+            }
 
             return reply.code(201).send(order);
 

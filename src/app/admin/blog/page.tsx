@@ -32,11 +32,23 @@ export default function BlogManagerPage() {
 
     const fetchPosts = async () => {
         try {
+            console.log('Fetching posts from:', BACKEND_URL);
             const res = await fetch(`${BACKEND_URL}/api/blog?limit=1000`);
+            console.log('Response status:', res.status);
             if (res.ok) {
                 const data = await res.json();
-                // Ensure data is array (api returns array)
-                setPosts(Array.isArray(data) ? data : []);
+                console.log('Fetched data:', data);
+                // Handle both array (legacy) and object with items (pagination)
+                if (Array.isArray(data)) {
+                    setPosts(data);
+                } else if (data.items && Array.isArray(data.items)) {
+                    setPosts(data.items);
+                } else {
+                    console.warn('Unexpected data format:', data);
+                    setPosts([]);
+                }
+            } else {
+                console.error('Fetch failed with status:', res.status);
             }
         } catch (error) {
             console.error("Failed to fetch posts", error);

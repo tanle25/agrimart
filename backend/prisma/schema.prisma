@@ -38,6 +38,12 @@ model Product {
   mainKeyword String?
   variants    Variant[]
   orderItems  OrderItem[]
+
+  @@index([category])
+  @@index([price])
+  @@index([status])
+  @@index([createdAt])
+  @@index([slug])
 }
 
 model Variant {

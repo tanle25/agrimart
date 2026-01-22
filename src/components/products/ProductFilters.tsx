@@ -101,7 +101,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                                         </div>
                                         <span className={`text-sm ${isSelected ? 'font-semibold' : 'font-medium'}`}>{cat.name}</span>
                                     </div>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${isSelected ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${isSelected ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'}`}>
                                         {cat.count}
                                     </span>
                                 </button>
@@ -148,12 +148,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
 
                 <div className="flex items-center justify-between gap-4">
                     <div className="border border-gray-200 rounded-lg p-2 w-full text-center">
-                        <span className="block text-xs text-gray-400 mb-1">Thấp nhất</span>
+                        <span className="block text-xs text-gray-600 mb-1">Thấp nhất</span>
                         <span className="font-semibold text-gray-900 text-sm">{priceRange[0].toLocaleString()}đ</span>
                     </div>
                     <div className="text-gray-400">-</div>
                     <div className="border border-gray-200 rounded-lg p-2 w-full text-center">
-                        <span className="block text-xs text-gray-400 mb-1">Cao nhất</span>
+                        <span className="block text-xs text-gray-600 mb-1">Cao nhất</span>
                         <span className="font-semibold text-gray-900 text-sm">{priceRange[1].toLocaleString()}đ</span>
                     </div>
                 </div>
