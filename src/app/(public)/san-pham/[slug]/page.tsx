@@ -69,3 +69,23 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
     return <ProductDetailClient slug={slug} initialProduct={product} initialRelatedProducts={relatedProducts} />;
 }
+
+// Enable static generation with ISR
+export const revalidate = 60; // Revalidate every 60 seconds
+export const dynamic = 'force-static';
+export const dynamicParams = true;
+
+// Generate static params for common products
+export async function generateStaticParams() {
+    const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001').replace('localhost', '127.0.0.1');
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/products?limit=20`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data.products || []).map((product: any) => ({
+            slug: product.slug || product.id.toString()
+        }));
+    } catch (e) {
+        return [];
+    }
+}
