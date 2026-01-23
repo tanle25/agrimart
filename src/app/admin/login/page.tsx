@@ -21,15 +21,33 @@ export default function AdminLoginPage() {
             .catch(err => console.error("Failed to load settings", err));
     }, []);
 
+    const [error, setError] = useState('');
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setError('');
 
-        // Mock login delay
-        setTimeout(() => {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                router.push('/admin/dashboard');
+                router.refresh(); // Refresh to update middleware state
+            } else {
+                setError(data.message || 'Đăng nhập thất bại');
+            }
+        } catch (err) {
+            setError('Đã xảy ra lỗi kết nối');
+        } finally {
             setIsLoading(false);
-            router.push('/admin/dashboard');
-        }, 1500);
+        }
     };
 
     return (
@@ -58,6 +76,11 @@ export default function AdminLoginPage() {
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
+                    {error && (
+                        <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium text-center border border-red-100 animate-in fade-in slide-in-from-top-2">
+                            {error}
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-gray-700 ml-1">Email của bạn</label>
                         <div className="relative group">

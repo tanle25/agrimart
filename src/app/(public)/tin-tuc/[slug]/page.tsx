@@ -69,8 +69,28 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
     const relatedPosts = await getRelatedPosts(post.id);
 
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        image: post.image ? [
+            post.image.startsWith('http') ? post.image : `${BACKEND_URL}/api/media/${post.image}`
+        ] : [],
+        datePublished: post.date,
+        dateModified: post.date, // Should be updated date if available
+        author: [{
+            '@type': 'Person',
+            name: post.author || 'AgriMart',
+            url: 'https://agrimart.vn'
+        }]
+    };
+
     return (
         <div className="bg-white min-h-screen pb-20 font-sans">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             {/* Hero Section - Immersive Design */}
             <div className="relative h-[50vh] md:h-[60vh] min-h-[350px] md:min-h-[500px] w-full overflow-hidden">
                 <AgriImage
@@ -196,7 +216,13 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                                     {relatedPosts.map((p: any) => (
                                         <Link key={p.id} href={`/tin-tuc/${p.slug || p.id}`} className="flex gap-4 group items-start">
                                             <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-xl overflow-hidden relative">
-                                                <img src={getImageUrl(p.image) || 'https://via.placeholder.com/150'} alt={p.title} width={96} height={96} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <AgriImage
+                                                    src={getImageUrl(p.image) || 'https://via.placeholder.com/150'}
+                                                    alt={p.title}
+                                                    width={96}
+                                                    height={96}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                />
                                             </div>
                                             <div>
                                                 <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 block bg-emerald-50 w-fit px-2 py-0.5 rounded">{p.category?.name || 'Tin tức'}</span>
@@ -204,7 +230,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                                                     {p.title}
                                                 </h4>
                                                 <span className="text-xs text-gray-400 flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" /> {new Date(p.date).toLocaleDateString('vi-VN')}
+                                                    <Calendar className="w-3 h-3" /> {formatDate(p.date)}
                                                 </span>
                                             </div>
                                         </Link>
@@ -221,4 +247,27 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
             </div>
         </div>
     );
+}
+
+// Enable static generation with ISR
+export const revalidate = 60; // Revalidate every 60 seconds
+export const dynamic = 'force-static';
+export const dynamicParams = true;
+
+// Generate static params for recent posts
+export async function generateStaticParams() {
+    const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001').replace('localhost', '127.0.0.1');
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/blog?limit=10`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        // API returns { items, total } or array depending on version, handle safe
+        const posts = Array.isArray(data) ? data : (data.items || []);
+
+        return posts.map((post: any) => ({
+            slug: post.slug || post.id.toString()
+        }));
+    } catch (e) {
+        return [];
+    }
 }

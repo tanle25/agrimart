@@ -9,6 +9,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { ArrowLeft, Loader2, MapPin, Truck, CreditCard, CheckCircle, ShieldCheck, Banknote, QrCode } from "lucide-react";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { getImageUrl } from "@/shared/utils";
+import { AgriImage } from "@/components/ui/AgriImage";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
@@ -426,10 +427,11 @@ export default function CheckoutPage() {
                                     return (
                                         <div key={idx} className="flex gap-4 group">
                                             <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100 bg-gray-50">
-                                                <Image
+                                                <AgriImage
                                                     src={imageUrl || "https://placehold.co/100"}
                                                     alt={item.name}
-                                                    fill
+                                                    width={64}
+                                                    height={64}
                                                     className="object-cover group-hover:scale-105 transition-transform"
                                                 />
                                             </div>

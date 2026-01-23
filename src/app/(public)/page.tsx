@@ -118,8 +118,29 @@ export default async function Home() {
         }
     }
 
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: settings.general?.siteTitle || 'AgriMart',
+        url: 'https://agrimart.vn',
+        logo: settings.general?.logo || 'https://agrimart.vn/logo.png',
+        sameAs: [
+            settings.store?.facebook || 'https://facebook.com/agrimart',
+            settings.store?.instagram || 'https://instagram.com/agrimart'
+        ],
+        contactPoint: {
+            '@type': 'ContactPoint',
+            telephone: settings.store?.phone || '+84-123-456-789',
+            contactType: 'Customer service'
+        }
+    };
+
     return (
         <div className="pb-16">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             {/* Optimized Hero Section */}
             <OptimizedHero
                 title={hero.title}

@@ -67,7 +67,40 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         relatedProducts = await getRelatedProducts(product.category, product.id);
     }
 
-    return <ProductDetailClient slug={slug} initialProduct={product} initialRelatedProducts={relatedProducts} />;
+    const jsonLd = product ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.name,
+        image: product.image ? [
+            product.image.startsWith('http') ? product.image : `http://localhost:8001/api/media/${product.image}`
+        ] : [],
+        description: product.description,
+        sku: product.id,
+        brand: {
+            '@type': 'Brand',
+            name: 'AgriMart' // Or product brand if available
+        },
+        offers: {
+            '@type': 'Offer',
+            url: `https://agrimart.vn/san-pham/${slug}`,
+            priceCurrency: 'VND',
+            price: product.price,
+            availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            itemCondition: 'https://schema.org/NewCondition'
+        }
+    } : null;
+
+    return (
+        <>
+            {product && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+            )}
+            <ProductDetailClient slug={slug} initialProduct={product} initialRelatedProducts={relatedProducts} />
+        </>
+    );
 }
 
 // Enable static generation with ISR

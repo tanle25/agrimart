@@ -175,7 +175,7 @@ export default function BlogList({ initialPosts = [], initialCategories = ["Tấ
                                                 priority={true}
                                                 fetchPriority="high"
                                             />
-                                            <div className="absolute top-4 left-4 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                                            <div className="absolute top-4 left-4 bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                                                 Nổi bật
                                             </div>
                                         </div>
