@@ -17,9 +17,10 @@ const start = async () => {
     try {
         // Register Plugins
         await app.register(cors, {
-            origin: '*', // Allow all origins for development
+            origin: process.env.FRONTEND_URL || 'http://localhost:8000',
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+            credentials: true
         });
         await app.register(sensible);
         await app.register(import('@fastify/multipart'), {

@@ -1,8 +1,14 @@
 import { FastifyPluginAsync } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { PrismaClient } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'agrimart-secret-key-change-me';
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error("FATAL: JWT_SECRET is not defined in .env");
+}
 
 const loginSchema = z.object({
     email: z.string().email(),
@@ -14,19 +20,20 @@ const authRoutes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         try {
             const body = loginSchema.parse(request.body);
 
-            // TODO: Replace with Real Database Check
-            // Hardcoded credentials for MVP phase
-            const VALID_EMAIL = 'admin@agrimart.vn';
-            const VALID_PASS = 'admin123';
+            // Find user in DB
+            const user = await prisma.user.findUnique({
+                where: { email: body.email }
+            });
 
-            if (body.email === VALID_EMAIL && body.password === VALID_PASS) {
+            // TODO: In production, verify hash: await bcrypt.compare(body.password, user.password)
+            if (user && user.password === body.password) {
                 // Generate Token
                 const token = jwt.sign(
                     {
-                        id: 1,
-                        email: body.email,
-                        role: 'admin',
-                        name: 'System Admin'
+                        id: user.id,
+                        email: user.email,
+                        role: user.role,
+                        name: user.name
                     },
                     JWT_SECRET,
                     { expiresIn: '24h' }
@@ -36,9 +43,9 @@ const authRoutes: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
                     success: true,
                     token,
                     user: {
-                        name: 'System Admin',
-                        email: body.email,
-                        role: 'admin'
+                        name: user.name,
+                        email: user.email,
+                        role: user.role
                     }
                 };
             }

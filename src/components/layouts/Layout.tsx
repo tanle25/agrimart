@@ -33,11 +33,20 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { cartCount } = useCart();
   const pathname = usePathname();
+
+  // Check if user is admin
+  useEffect(() => {
+    fetch('/api/auth/check')
+      .then(res => res.json())
+      .then(data => setIsAdmin(data.isAuthenticated))
+      .catch(err => console.error('Auth check failed', err));
+  }, []);
 
   // Handle closing menu with animation
   const handleCloseMenu = useCallback(() => {
@@ -241,10 +250,12 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                   </span>
                 )}
               </Link>
-              <Link href="/admin/dashboard" className="hidden md:flex items-center gap-2 text-sm font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors">
-                <User className="w-4 h-4" />
-                <span>Admin</span>
-              </Link>
+              {isAdmin && (
+                <Link href="/admin/dashboard" className="hidden md:flex items-center gap-2 text-sm font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors">
+                  <User className="w-4 h-4" />
+                  <span>Admin</span>
+                </Link>
+              )}
               <button
                 type="button"
                 aria-label="Mở menu điều hướng"
@@ -409,25 +420,25 @@ export const PublicLayout: React.FC<{ children: React.ReactNode; settings?: Glob
                 </div>
 
                 {/* Drawer Footer */}
-                <div className="p-4 border-t border-gray-100 bg-gray-50">
-                  <Link
-                    href="/admin/dashboard"
-                    className="flex items-center justify-center gap-2 w-full bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all shadow-sm"
-                    onClick={handleCloseMenu}
-                  >
-                    <User className="w-4 h-4" /> Truy cập Admin
-                  </Link>
-                </div>
+                {isAdmin && (
+                  <div className="p-4 border-t border-gray-100 bg-gray-50">
+                    <Link
+                      href="/admin/dashboard"
+                      className="flex items-center justify-center gap-2 w-full bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all shadow-sm"
+                      onClick={handleCloseMenu}
+                    >
+                      <User className="w-4 h-4" /> Truy cập Admin
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </>
         )}
       </header>
-
       <main className="flex-1 bg-white overflow-auto">
         {children}
       </main>
-
       <footer className="bg-emerald-900 text-emerald-100 flex-shrink-0 py-8">
         <div className="container mx-auto px-4">
           <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6">
