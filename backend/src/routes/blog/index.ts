@@ -1,7 +1,76 @@
 import { FastifyPluginAsync } from 'fastify';
 import prisma from '../../services/db.js';
+import sanitizeHtml from 'sanitize-html';
 
 const blogRoutes: FastifyPluginAsync = async (fastify) => {
+    // ... (rest of the file)
+
+    // Sanitize helper
+    const sanitize = (html: string) => sanitizeHtml(html, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'iframe']),
+        allowedAttributes: {
+            ...sanitizeHtml.defaults.allowedAttributes,
+            'img': ['src', 'alt', 'width', 'height'],
+            'iframe': ['src', 'width', 'height', 'allowfullscreen']
+        }
+    });
+
+    fastify.post('/', async (request, reply) => {
+        const data = request.body as any;
+        try {
+            const post = await prisma.blogPost.create({
+                data: {
+                    title: data.title, // Title usually safe or can be escaped, but Prisma handles standard SQL injection. XSS in title is rarer if rendered as text.
+                    slug: data.slug,
+                    content: sanitize(data.content || ''),
+                    excerpt: sanitize(data.excerpt || ''),
+                    image: data.image,
+                    categoryId: data.categoryId ? Number(data.categoryId) : undefined,
+                    tags: data.tags || [],
+                    author: data.author,
+                    readTime: data.readTime,
+                    featured: data.featured || false,
+                    seoTitle: data.seoTitle,
+                    seoDesc: data.seoDesc,
+                    mainKeyword: data.mainKeyword,
+                    date: new Date().toLocaleDateString('vi-VN')
+                }
+            });
+            return post;
+        } catch (e) {
+            request.log.error(e);
+            return reply.internalServerError('Failed to create blog post');
+        }
+    });
+
+    fastify.put('/:id', async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const data = request.body as any;
+        try {
+            const post = await prisma.blogPost.update({
+                where: { id: Number(id) },
+                data: {
+                    title: data.title,
+                    slug: data.slug,
+                    content: sanitize(data.content || ''),
+                    excerpt: sanitize(data.excerpt || ''),
+                    image: data.image,
+                    categoryId: data.categoryId ? Number(data.categoryId) : undefined,
+                    tags: data.tags || [],
+                    author: data.author,
+                    readTime: data.readTime,
+                    featured: data.featured,
+                    seoTitle: data.seoTitle,
+                    seoDesc: data.seoDesc,
+                    mainKeyword: data.mainKeyword
+                }
+            });
+            return post;
+        } catch (e) {
+            request.log.error(e);
+            return reply.internalServerError('Failed to update blog post');
+        }
+    });
     fastify.get('/', async (request) => {
         const { page = 1, limit, search, category } = request.query as {
             page?: number | string,
@@ -78,62 +147,7 @@ const blogRoutes: FastifyPluginAsync = async (fastify) => {
         return { exists: count > 0 };
     });
 
-    fastify.post('/', async (request, reply) => {
-        const data = request.body as any;
-        try {
-            const post = await prisma.blogPost.create({
-                data: {
-                    title: data.title,
-                    slug: data.slug,
-                    content: data.content,
-                    excerpt: data.excerpt,
-                    image: data.image,
-                    categoryId: data.categoryId ? Number(data.categoryId) : undefined,
-                    tags: data.tags || [],
-                    author: data.author,
-                    readTime: data.readTime,
-                    featured: data.featured || false,
-                    seoTitle: data.seoTitle,
-                    seoDesc: data.seoDesc,
-                    mainKeyword: data.mainKeyword,
-                    date: new Date().toLocaleDateString('vi-VN') // Simple date string or use createdAt
-                }
-            });
-            return post;
-        } catch (e) {
-            request.log.error(e);
-            return reply.internalServerError('Failed to create blog post');
-        }
-    });
 
-    fastify.put('/:id', async (request, reply) => {
-        const { id } = request.params as { id: string };
-        const data = request.body as any;
-        try {
-            const post = await prisma.blogPost.update({
-                where: { id: Number(id) },
-                data: {
-                    title: data.title,
-                    slug: data.slug,
-                    content: data.content,
-                    excerpt: data.excerpt,
-                    image: data.image,
-                    categoryId: data.categoryId ? Number(data.categoryId) : undefined,
-                    tags: data.tags || [],
-                    author: data.author,
-                    readTime: data.readTime,
-                    featured: data.featured,
-                    seoTitle: data.seoTitle,
-                    seoDesc: data.seoDesc,
-                    mainKeyword: data.mainKeyword
-                }
-            });
-            return post;
-        } catch (e) {
-            request.log.error(e);
-            return reply.internalServerError('Failed to update blog post');
-        }
-    });
 
     fastify.delete('/:id', async (request, reply) => {
         const { id } = request.params as { id: string };

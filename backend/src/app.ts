@@ -22,6 +22,26 @@ const start = async () => {
             allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
             credentials: true
         });
+
+        // Security Headers
+        await app.register(import('@fastify/helmet'), {
+            global: true,
+            contentSecurityPolicy: false, // Disable default CSP for now to avoid frontend breakage, can refine later
+        });
+
+        // Rate Limiting
+        await app.register(import('@fastify/rate-limit'), {
+            max: 100, // Max 100 requests per window
+            timeWindow: '1 minute',
+            errorResponseBuilder: function (request, context) {
+                return {
+                    statusCode: 429,
+                    error: 'Too Many Requests',
+                    message: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.'
+                }
+            }
+        });
+
         await app.register(sensible);
         await app.register(import('@fastify/multipart'), {
             limits: {

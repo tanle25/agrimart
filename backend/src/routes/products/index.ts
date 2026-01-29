@@ -2,7 +2,60 @@ import { FastifyPluginAsync } from 'fastify';
 
 import prisma from '../../services/db.js';
 
+import sanitizeHtml from 'sanitize-html';
+
 const productRoutes: FastifyPluginAsync = async (fastify) => {
+    // Sanitize helper
+    const sanitize = (html: string) => sanitizeHtml(html, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'iframe']),
+        allowedAttributes: {
+            ...sanitizeHtml.defaults.allowedAttributes,
+            'img': ['src', 'alt', 'width', 'height'],
+            'iframe': ['src', 'width', 'height', 'allowfullscreen']
+        }
+    });
+
+    // ... (rest of GET routes)
+
+    fastify.post('/', async (request, reply) => {
+        const data = request.body as any;
+        const { variants, width, height, length, weight, seoDescription, description, ...rest } = data;
+
+        try {
+            const product = await prisma.product.create({
+                data: {
+                    ...rest,
+                    description: description ? sanitize(description) : undefined, // Sanitize description
+                    seoDesc: seoDescription,
+                    dimensions: {
+                        width: width || null,
+                        height: height || null,
+                        length: length || null
+                    },
+                    weight: weight ? parseFloat(weight.toString()) : null,
+                    type: data.type || 'simple',
+                    stock: data.stock ? parseInt(data.stock.toString()) : 0,
+                    variants: variants ? {
+                        create: variants.map((v: any) => ({
+                            name: v.name || Object.values(v.attributes || {}).join(' - '),
+                            price: parseFloat(v.price),
+                            salePrice: v.salePrice ? parseFloat(v.salePrice) : 0,
+                            stock: parseInt(v.stock || '0'),
+                            sku: v.sku,
+                            attributes: v.attributes,
+                            image: v.image
+                        }))
+                    } : undefined
+                },
+                include: { variants: true }
+            });
+            return product;
+        } catch (e) {
+            request.log.error(e);
+            return reply.internalServerError('Failed to create product');
+        }
+    });
+
     fastify.get('/categories', async (request, reply) => {
         reply.header('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
         try {

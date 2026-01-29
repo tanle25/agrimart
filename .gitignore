@@ -55,3 +55,11 @@ backend/public/uploads/cache/
 
 # Local docs
 docs/
+
+# Reports and temporary files
+reports/
+*.sh
+
+# Database
+*.db
+*.sqlite
